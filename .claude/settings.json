@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(java -version)",
+      "Bash(mvn -version)",
+      "Bash(./mvnw.cmd -q compile)",
+      "Bash(./mvnw.cmd -q test)",
+      "Bash(tasklist //FI \"IMAGENAME eq java.exe\")"
+    ]
+  }
+}

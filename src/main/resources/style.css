@@ -1,0 +1,221 @@
+/*
+ * Professional dark theme. Overrides the Modena base variables (-fx-base,
+ * -fx-background, -fx-control-inner-background, -fx-accent) at the root - the stock
+ * JavaFX stylesheet derives almost all control colors (buttons, combo boxes, tables,
+ * tabs, menus, scrollbars) from these via derive(), so this single block re-themes
+ * the whole app without needing to hand-style every control type. Chart internals
+ * (plot background/gridlines/legend) use their own style classes and are set explicitly below.
+ */
+.root {
+    -fx-base: #262b33;
+    -fx-background: #1e2228;
+    -fx-control-inner-background: #2a2f38;
+    -fx-control-inner-background-alt: #262b33;
+    -fx-accent: #4aa3df;
+    -fx-focus-color: #4aa3df;
+    -fx-faint-focus-color: #4aa3df22;
+    -fx-text-base-color: #e4e8ec;
+    -fx-text-background-color: #e4e8ec;
+    /* BIZ UDPゴシック (BIZ UDP Gothic, a Windows-bundled Universal Design font) renders both
+       Japanese and Latin text cleanly at small sizes, so one font family works for either language
+       this app displays in - no per-locale font switch needed. The family name is registered in
+       Japanese script (confirmed via .NET's InstalledFontCollection), not a romanized "BIZ
+       UDPGothic" - falls back to Segoe UI/sans-serif if unresolvable (e.g. a non-Japanese Windows
+       edition without the JP language pack/font installed). */
+    -fx-font-family: "BIZ UDPゴシック", "Segoe UI", sans-serif;
+    -fx-font-size: 12px;
+
+    /*
+     * Modena's unfocused-row selection color (e.g. a TableView row selected by clicking its
+     * checkbox cell, then the table itself not holding keyboard focus) isn't derived from any of
+     * the palette variables above - it stays a hardcoded light gray regardless of theme, which
+     * combined with this app's light text color made a selected-but-unfocused row nearly
+     * unreadable (light text on near-white). The focused-selection variable is overridden too for
+     * a consistent, theme-appropriate accent instead of Modena's default light-blue.
+     */
+    -fx-selection-bar: #3a6ea5;
+    -fx-selection-bar-non-focused: #3a4048;
+}
+
+.label {
+    -fx-text-fill: #e4e8ec;
+}
+
+.menu-bar {
+    -fx-background-color: #20242b;
+}
+
+.chart-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e4e8ec;
+}
+
+.table-view {
+    -fx-font-size: 12px;
+}
+
+.tab-pane .tab-header-area {
+    -fx-padding: 2 0 0 4;
+}
+
+/* Charts: Modena's derive() rules don't fully reach chart internals, so set them explicitly. */
+.chart {
+    -fx-background-color: transparent;
+}
+
+.chart-plot-background {
+    -fx-background-color: #20242b;
+}
+
+.chart-vertical-grid-lines,
+.chart-horizontal-grid-lines {
+    -fx-stroke: #3a4048;
+}
+
+.axis {
+    -fx-tick-label-fill: #c6cdd4;
+    -fx-text-fill: #c6cdd4;
+    /* Chart axis ticks are always numeric (NumberAxis is the only axis type this app uses) -
+       Consolas' fixed-width digits keep tick labels aligned and easy to scan. -fx-tick-label-font
+       is a single-value font shorthand (unlike the plain -fx-font-family property below), so no
+       comma-separated fallback list here - falls back to the control default font if unresolvable. */
+    -fx-tick-label-font: 11px "Consolas";
+}
+
+/*
+ * Numeric table cells (RSSI, channel, quality%, timestamps, MHz, RTT) and chart tick labels use
+ * Consolas so digits stay fixed-width and easy to visually compare down a column - a TableColumn's
+ * own style class doesn't cascade to its TableCell instances (they aren't parent/child in the
+ * scene graph), so this is applied per-cell via a custom cellFactory (see
+ * com.waj.tool.util.MonoTableCells) rather than just tagging the column.
+ */
+.mono-numeric {
+    -fx-font-family: "Consolas", "BIZ UDPゴシック", monospace;
+}
+
+.axis-label {
+    -fx-text-fill: #c6cdd4;
+}
+
+.chart-legend {
+    -fx-background-color: #262b33;
+    -fx-text-fill: #e4e8ec;
+}
+
+.chart-legend-item {
+    -fx-text-fill: #e4e8ec;
+}
+
+/* Modern flat control polish - subtle rounding so buttons/combos/toggles feel less "stock Modena". */
+.button, .combo-box, .toggle-button, .text-field {
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+}
+
+/*
+ * Modena's default prompt/placeholder text derives from -fx-control-inner-background (darkened
+ * further) - on a light theme that yields a visible mid-gray, but on this dark override it derives
+ * an already-dark color to somewhere even darker, landing almost the same shade as the field
+ * itself (near-unreadable placeholder text in every empty TextField/ComboBox editor: ping-target
+ * fields, BSSID filter, traceroute host field). Derive from the light text color instead so
+ * placeholder text stays legibly dimmed rather than dark-on-dark.
+ */
+.text-input {
+    -fx-prompt-text-fill: derive(-fx-text-base-color, -35%);
+}
+
+.button {
+    -fx-padding: 5 12 5 12;
+}
+
+/*
+ * Modena's "default button" (the Enter-triggered one, e.g. a dialog's OK) normally gets a pale
+ * tinted background because it assumes a light theme where that reads as "highlighted"; paired
+ * with this app's light button text, the result was low-contrast light-on-light. Use the app's
+ * saturated accent color with white text instead - reads clearly as the primary action.
+ */
+.button:default {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: white;
+}
+
+/*
+ * Reusable "card" bordered panel - groups a chart/table + its toolbar into one visual block.
+ * Used across Dashboard/Channel Planning/Security Audit/History so every tab's main content
+ * reads as the same kind of framed unit instead of some tabs having a border and others not.
+ */
+.card {
+    -fx-border-color: #3a4048;
+    -fx-border-width: 1;
+    -fx-padding: 6;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+}
+
+/*
+ * On-chart text annotations (Dashboard spectrum peak labels, Channel Planning's "推奨" label) -
+ * dark drop-shadow so they stay legible sitting directly on top of busy/colored chart content
+ * regardless of the label's own fill color (set inline per-AP/per-case).
+ */
+.chart-annotation-label {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.55), 2.5, 0.5, 0, 1);
+}
+
+/* Dashboard spectrum trace curve - stroke color is set inline per-AP, width/shadow shared here. */
+.spectrum-peak-curve {
+    -fx-stroke-width: 2.5px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 3, 0.4, 0, 1);
+}
+
+/* Dashboard channel-utilization overlay curve on the spectrum chart - always white/dashed. */
+.utilization-series {
+    -fx-stroke: white;
+    -fx-stroke-width: 1.5px;
+    -fx-stroke-dash-array: 4 3;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 2.5, 0.4, 0, 1);
+}
+
+.snr-axis-title {
+    -fx-font-size: 10px;
+    -fx-text-fill: #c6cdd4;
+}
+
+.snr-axis-tick-label {
+    -fx-font-size: 10px;
+}
+
+/* Channel Planning occupancy trapezoid (per AP per channel) - stroke color set inline per-AP,
+   width/shadow shared here; matches the reference "channel plan" diagram's solid outline. */
+.channel-occupancy-line {
+    -fx-stroke-width: 2px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 2.5, 0.4, 0, 1);
+}
+
+/* Same curve's fill - translucent so overlapping APs sharing one channel are all still visible. */
+.channel-occupancy-fill {
+    -fx-opacity: 0.35;
+}
+
+/* Sub-band (J52/J53/J56) boundary reference lines in Channel Planning. */
+.subband-divider {
+    -fx-stroke: #6b7280;
+    -fx-stroke-width: 1px;
+    -fx-stroke-dash-array: 6 4;
+}
+
+/* Shared hover crosshair (ChartCrosshair) - used by Dashboard's two charts and History's chart. */
+.crosshair-line {
+    -fx-stroke: #e4e8ec;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 2, 0.4, 0, 0);
+}
+
+.crosshair-panel {
+    -fx-padding: 6;
+}
+
+.crosshair-header {
+    -fx-font-weight: bold;
+}
