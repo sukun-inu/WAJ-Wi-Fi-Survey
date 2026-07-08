@@ -74,6 +74,20 @@ UIは日本語/英語(設定画面から切り替え、再起動後に反映)に
 .\mvnw.cmd test
 ```
 
+## 配布用exeビルド
+
+外部インストール不要(同梱の `.tools/jdk21` の `jpackage` を使用)で、単体で実行できるWindowsアプリイメージ(exe)を `dist/<version>/` 配下に生成します。
+
+```
+.\build-release.ps1
+```
+
+- Maven本ビルド(テスト込み)→ 依存込みfat jar化(`maven-shade-plugin`)→ `jpackage --type app-image` の順で実行します。
+- 生成物: `dist/<version>/WAJ WiFi Survey/WAJ WiFi Survey.exe`(Java実行環境同梱、そのまま配布可能)、および同ディレクトリに配布用zipも作成されます。
+- `dist/` はバージョンごとにサブディレクトリを分けるビルド専用の配布物置き場です(gitでは追跡しません)。再ビルドすると対象バージョンのフォルダのみ作り直されます。
+- テストをスキップしたい場合: `.\build-release.ps1 -SkipTests`
+- インストーラ形式(`.msi`/単一exeインストーラ)が必要な場合は [WiX Toolset](https://wixtoolset.org/) を別途インストールした上で、スクリプト内の `--type app-image` を `--type msi` 等に変更してください(現状はWiX不要なapp-image形式のみ対応)。
+
 主なテスト対象:
 
 - WLAN/セキュリティ: `Dot11SsidTest`, `SecurityClassifierTest`
@@ -110,4 +124,4 @@ com.waj.tool
 - Historyタブの検索結果は最大5000件までです(大量データ時は直近側へ切り詰め表示)。
 - Historyタブの期間指定はプリセット(15分/1時間/24時間/7日間)のみで、任意の日付範囲指定はできません。
 - Site Surveyプロジェクトはフロアプランの絶対パスを保持するため、画像ファイルを移動した場合は再指定が必要です。
-- `jpackage` によるexe化は未実施です。実施すると、Windowsの位置情報許可一覧にわかりやすいアプリ名で表示されるようになります。
+- `jpackage` によるexe化(`.\build-release.ps1`)に対応済みです。現状は WiX Toolset 不要な app-image 形式のみで、`.msi` 等の単体インストーラ生成は未対応です。
