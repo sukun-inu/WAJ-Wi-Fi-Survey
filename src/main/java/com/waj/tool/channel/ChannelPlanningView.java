@@ -6,6 +6,7 @@ import com.waj.tool.model.ScanSnapshot;
 import com.waj.tool.ui.dashboard.AnnotatedAreaChart;
 import com.waj.tool.util.CategoricalColorPalette;
 import com.waj.tool.util.ChannelUtil;
+import com.waj.tool.util.TooltipSupport;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -128,6 +129,7 @@ public final class ChannelPlanningView {
             hoveredChannel = null;
             refresh();
         });
+        TooltipSupport.set(bandSelector, Messages.get("tooltip.channelPlanning.bandSelector"));
 
         for (int i = 0; i < MAX_PANELS; i++) {
             Panel p = new Panel();
@@ -135,12 +137,14 @@ public final class ChannelPlanningView {
             panelsColumn.getChildren().add(p.box);
         }
         VBox.setVgrow(panelsColumn, Priority.ALWAYS);
+        TooltipSupport.install(panelsColumn, Messages.get("tooltip.channelPlanning.chart"));
 
         hoverHeader.getStyleClass().add("crosshair-header");
         hoverPanel.getStyleClass().add("crosshair-panel");
         hoverPanel.setMinWidth(220);
         hoverPanel.getChildren().addAll(hoverHeader, hoverEntriesBox);
         showHoverPlaceholder();
+        TooltipSupport.set(hoverPanel, Messages.get("tooltip.channelPlanning.hoverPanel"));
 
         HBox toolbar = new HBox(6, bandSelector);
         toolbar.setAlignment(Pos.CENTER_LEFT);
@@ -148,6 +152,7 @@ public final class ChannelPlanningView {
                 new Label(Messages.get("channelPlanning.title")),
                 toolbar, recommendationLabel);
         top.setPadding(new Insets(8));
+        TooltipSupport.set(recommendationLabel, Messages.get("tooltip.channelPlanning.recommendation"));
 
         HBox mainRow = new HBox(4, panelsColumn, hoverPanel);
         HBox.setHgrow(panelsColumn, Priority.ALWAYS);

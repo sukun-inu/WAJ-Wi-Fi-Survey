@@ -7,6 +7,7 @@ import com.waj.tool.ui.dashboard.AnnotatedLineChart;
 import com.waj.tool.ui.dashboard.ChartCrosshair;
 import com.waj.tool.util.CategoricalColorPalette;
 import com.waj.tool.util.MonoTableCells;
+import com.waj.tool.util.TooltipSupport;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
@@ -85,6 +86,9 @@ public final class TracerouteView {
         buildToolbar();
         buildTable();
         buildChart();
+        TooltipSupport.set(statusLabel, Messages.get("tooltip.traceroute.status"));
+        TooltipSupport.set(table, Messages.get("tooltip.traceroute.table"));
+        TooltipSupport.install(chart, Messages.get("tooltip.traceroute.chart"));
 
         HBox chartRow = new HBox(4, chart, crosshair.getPanel());
         HBox.setHgrow(chart, Priority.ALWAYS);
@@ -119,6 +123,7 @@ public final class TracerouteView {
     private void buildToolbar() {
         hostField.setPromptText(Messages.get("traceroute.hostField.prompt"));
         hostField.setPrefWidth(220);
+        TooltipSupport.set(hostField, Messages.get("tooltip.traceroute.host"));
         // hostField is disabled for the whole time monitoring is running (see startMonitoring()/
         // onRouteDiscovered()), so Enter here can only ever mean "start" - no need to branch on
         // `running` the way the button's own handler below does.
@@ -131,6 +136,7 @@ public final class TracerouteView {
                 startMonitoring();
             }
         });
+        TooltipSupport.set(startStopButton, Messages.get("tooltip.traceroute.startStop"));
 
         HBox toolbar = new HBox(8, new Label(Messages.get("traceroute.label.host")), hostField, startStopButton, statusLabel);
         toolbar.setAlignment(Pos.CENTER_LEFT);
@@ -281,6 +287,7 @@ public final class TracerouteView {
         yAxis.setAutoRanging(true);
 
         crosshair = new ChartCrosshair(chart, chart, xAxis, this::formatTimeAxis, this::entriesAt, "ms");
+        TooltipSupport.set(crosshair.getPanel(), Messages.get("tooltip.common.crosshairPanel"));
     }
 
     private String formatTimeAxis(double elapsedSeconds) {

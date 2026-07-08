@@ -3,6 +3,7 @@ package com.waj.tool.alert;
 import com.waj.tool.i18n.Messages;
 import com.waj.tool.util.MonoTableCells;
 import com.waj.tool.util.RiskColors;
+import com.waj.tool.util.TooltipSupport;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -30,6 +31,8 @@ public final class AlertsView {
 
         Button settingsButton = new Button(Messages.get("common.button.settingsDialog"));
         settingsButton.setOnAction(e -> onSettingsRequested.run());
+        TooltipSupport.set(settingsButton, Messages.get("tooltip.alerts.settings"));
+        TooltipSupport.set(table, Messages.get("tooltip.alerts.table"));
         HBox top = new HBox(8, new Label(Messages.get("alerts.label.title")), settingsButton);
         top.setAlignment(Pos.CENTER_LEFT);
         top.setPadding(new Insets(8));

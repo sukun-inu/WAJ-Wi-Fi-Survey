@@ -7,6 +7,7 @@ import com.waj.tool.model.ScanSnapshot;
 import com.waj.tool.util.CategoricalColorPalette;
 import com.waj.tool.util.MonoTableCells;
 import com.waj.tool.util.RiskColors;
+import com.waj.tool.util.TooltipSupport;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -40,6 +41,8 @@ public final class SecurityAuditView {
         this.trustedApRegistry = trustedApRegistry;
         this.colorPalette = colorPalette;
         buildTable();
+        TooltipSupport.set(summaryLabel, Messages.get("tooltip.security.summary"));
+        TooltipSupport.set(table, Messages.get("tooltip.security.table"));
         VBox top = new VBox(6, new Label(Messages.get("security.title")), summaryLabel);
         top.setPadding(new Insets(8));
         VBox center = new VBox(table);

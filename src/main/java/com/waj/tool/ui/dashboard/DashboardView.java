@@ -10,6 +10,7 @@ import com.waj.tool.util.AppTheme;
 import com.waj.tool.util.CategoricalColorPalette;
 import com.waj.tool.util.MonoTableCells;
 import com.waj.tool.util.NoiseEstimator;
+import com.waj.tool.util.TooltipSupport;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -157,6 +158,8 @@ public final class DashboardView {
     // every single poll tick at that rate would be wasteful. Explicit interactions (band change,
     // visibility toggle, canvas resize) bypass this and redraw immediately.
     private static final long SPECTROGRAM_MIN_REDRAW_INTERVAL_MILLIS = 500;
+    private static final DateTimeFormatter LAST_SCAN_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
 
     private final TrustedApRegistry trustedApRegistry;
 
@@ -407,11 +410,15 @@ public final class DashboardView {
         rssiCrosshair = new ChartCrosshair(rssiHistoryChart, rssiHistoryChart, rssiHistoryXAxis,
                 this::formatTimeAxis, this::rssiEntriesAt);
         rssiCrosshair.installYAxisWheelZoom(rssiHistoryYAxis, rssiYZoomResetButton);
+        TooltipSupport.set(rssiYZoomResetButton, Messages.get("tooltip.dashboard.resetYAxis"));
+        TooltipSupport.set(rssiCrosshair.getPanel(), Messages.get("tooltip.common.crosshairPanel"));
 
         spectrumYZoomResetButton = new Button(Messages.get("common.button.resetYAxis"));
         spectrumCrosshair = new ChartCrosshair(spectrumChart, spectrumChart, spectrumXAxis,
                 f -> String.format("%.0f MHz", f), this::spectrumEntriesAt);
         spectrumCrosshair.installYAxisWheelZoom(spectrumYAxis, spectrumYZoomResetButton);
+        TooltipSupport.set(spectrumYZoomResetButton, Messages.get("tooltip.dashboard.resetYAxis"));
+        TooltipSupport.set(spectrumCrosshair.getPanel(), Messages.get("tooltip.common.crosshairPanel"));
     }
 
     private String formatTimeAxis(double elapsedSeconds) {
@@ -471,16 +478,26 @@ public final class DashboardView {
         exportCsvButton.setOnAction(e -> exportApTable(true));
         Button exportJsonButton = new Button(Messages.get("common.button.exportJson"));
         exportJsonButton.setOnAction(e -> exportApTable(false));
+        TooltipSupport.set(exportCsvButton, Messages.get("tooltip.dashboard.exportCsv"));
+        TooltipSupport.set(exportJsonButton, Messages.get("tooltip.dashboard.exportJson"));
+        TooltipSupport.set(apTable, Messages.get("tooltip.dashboard.apTable"));
+        TooltipSupport.set(bandSelector, Messages.get("tooltip.dashboard.bandSelector"));
+        TooltipSupport.set(noiseFloorLabel, Messages.get("tooltip.dashboard.noiseFloor"));
+        TooltipSupport.install(rssiHistoryChart, Messages.get("tooltip.dashboard.rssiChart"));
+        TooltipSupport.install(spectrumChart, Messages.get("tooltip.dashboard.spectrumChart"));
         HBox exportBar = new HBox(6, new Label("Access Points"), exportCsvButton, exportJsonButton);
         exportBar.setAlignment(Pos.CENTER_LEFT);
 
         VBox accessPointsBox = new VBox(6, exportBar, apTable);
         accessPointsBox.setPadding(new Insets(8));
         VBox.setVgrow(apTable, Priority.ALWAYS);
-        accessPointsBox.setPrefHeight(260);
+        accessPointsBox.setPrefHeight(230);
+        accessPointsBox.setMinHeight(180);
 
         HBox rssiRow = new HBox(4, rssiHistoryChart, rssiCrosshair.getPanel());
         HBox.setHgrow(rssiHistoryChart, Priority.ALWAYS);
+        rssiCrosshair.getPanel().setMinWidth(180);
+        rssiCrosshair.getPanel().setPrefWidth(190);
         HBox rssiToolbar = new HBox(6, rssiYZoomResetButton);
         rssiToolbar.setAlignment(Pos.CENTER_LEFT);
         VBox rssiBox = new VBox(2, rssiToolbar, rssiRow);
@@ -492,6 +509,8 @@ public final class DashboardView {
 
         HBox traceRow = new HBox(2, spectrumChart, snrAxisBox, spectrumCrosshair.getPanel());
         HBox.setHgrow(spectrumChart, Priority.ALWAYS);
+        spectrumCrosshair.getPanel().setMinWidth(180);
+        spectrumCrosshair.getPanel().setPrefWidth(190);
         HBox spectrumToolbar = new HBox(6, bandSelector, spectrumYZoomResetButton);
         spectrumToolbar.setAlignment(Pos.CENTER_LEFT);
 
@@ -507,7 +526,7 @@ public final class DashboardView {
 
         SplitPane mainSplit = new SplitPane(chartsSplit, accessPointsBox);
         mainSplit.setOrientation(Orientation.VERTICAL);
-        mainSplit.setDividerPositions(0.72);
+        mainSplit.setDividerPositions(0.78);
 
         root.setCenter(mainSplit);
 
@@ -560,7 +579,8 @@ public final class DashboardView {
                     .ifPresent(ap -> apTable.getSelectionModel().select(ap));
         }
 
-        lastScanLabel.setText(Messages.get("dashboard.label.lastScanValue", snapshot.timestamp().toString()));
+        lastScanLabel.setText(Messages.get("dashboard.label.lastScanValue",
+                LAST_SCAN_TIME_FORMATTER.format(snapshot.timestamp())));
         refreshRssiHistoryChart();
         refreshSpectrumChart(snapshot);
         maybeRefreshSpectrogram();

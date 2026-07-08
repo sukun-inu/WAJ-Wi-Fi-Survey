@@ -18,6 +18,7 @@ import com.waj.tool.ui.survey.SurveyView;
 import com.waj.tool.i18n.Messages;
 import com.waj.tool.util.AppTheme;
 import com.waj.tool.util.CategoricalColorPalette;
+import com.waj.tool.util.TooltipSupport;
 import com.waj.tool.wlan.WlanInterface;
 import com.waj.tool.wlan.WlanPoller;
 import javafx.application.Application;
@@ -100,18 +101,25 @@ public class App extends Application {
         TabPane tabPane = new TabPane();
         Tab dashboardTab = new Tab(Messages.get("app.tab.dashboard"), dashboard.getRoot());
         dashboardTab.setClosable(false);
+        dashboardTab.setTooltip(TooltipSupport.create(Messages.get("tooltip.tab.dashboard")));
         Tab surveyTab = new Tab(Messages.get("app.tab.siteSurvey"), survey.getRoot());
         surveyTab.setClosable(false);
+        surveyTab.setTooltip(TooltipSupport.create(Messages.get("tooltip.tab.siteSurvey")));
         Tab securityTab = new Tab(Messages.get("app.tab.securityAudit"), securityAudit.getRoot());
         securityTab.setClosable(false);
+        securityTab.setTooltip(TooltipSupport.create(Messages.get("tooltip.tab.securityAudit")));
         Tab channelTab = new Tab(Messages.get("app.tab.channelPlanning"), channelPlanning.getRoot());
         channelTab.setClosable(false);
+        channelTab.setTooltip(TooltipSupport.create(Messages.get("tooltip.tab.channelPlanning")));
         Tab alertsTab = new Tab(Messages.get("app.tab.alerts"), alertsView.getRoot());
         alertsTab.setClosable(false);
+        alertsTab.setTooltip(TooltipSupport.create(Messages.get("tooltip.tab.alerts")));
         Tab historyTab = new Tab(Messages.get("app.tab.history"), historyView.getRoot());
         historyTab.setClosable(false);
+        historyTab.setTooltip(TooltipSupport.create(Messages.get("tooltip.tab.history")));
         Tab tracerouteTab = new Tab(Messages.get("app.tab.traceroute"), tracerouteView.getRoot());
         tracerouteTab.setClosable(false);
+        tracerouteTab.setTooltip(TooltipSupport.create(Messages.get("tooltip.tab.traceroute")));
         tabPane.getTabs().addAll(dashboardTab, surveyTab, securityTab, channelTab, alertsTab, historyTab, tracerouteTab);
 
         Label accessDeniedBanner = new Label();
@@ -119,11 +127,13 @@ public class App extends Application {
         accessDeniedBanner.setMaxWidth(Double.MAX_VALUE);
         accessDeniedBanner.setVisible(false);
         accessDeniedBanner.setManaged(false);
+        TooltipSupport.set(accessDeniedBanner, Messages.get("tooltip.app.locationDeniedBanner"));
 
         Button openSettingsButton = new Button(Messages.get("common.button.openLocationSettings"));
         openSettingsButton.setOnAction(e -> openLocationSettings());
         openSettingsButton.setVisible(false);
         openSettingsButton.setManaged(false);
+        TooltipSupport.set(openSettingsButton, Messages.get("tooltip.app.openLocationSettings"));
 
         ComboBox<WlanInterface> interfaceSelector = new ComboBox<>();
         interfaceSelector.setPrefWidth(320);
@@ -138,8 +148,12 @@ public class App extends Application {
                 return null;
             }
         });
+        TooltipSupport.set(interfaceSelector, Messages.get("tooltip.app.interfaceSelector"));
 
         Button refreshInterfacesButton = new Button(Messages.get("app.button.rescan"));
+        TooltipSupport.set(refreshInterfacesButton, Messages.get("tooltip.app.refreshInterfaces"));
+        TooltipSupport.set(dashboard.getInterfaceLabel(), Messages.get("tooltip.app.currentInterface"));
+        TooltipSupport.set(dashboard.getLastScanLabel(), Messages.get("tooltip.app.lastScan"));
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);

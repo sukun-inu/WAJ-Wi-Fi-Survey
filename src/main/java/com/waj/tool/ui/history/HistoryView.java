@@ -8,12 +8,14 @@ import com.waj.tool.util.AppTheme;
 import com.waj.tool.util.CategoricalColorPalette;
 import com.waj.tool.util.CsvUtil;
 import com.waj.tool.util.MonoTableCells;
+import com.waj.tool.util.TooltipSupport;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Orientation;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.chart.NumberAxis;
@@ -118,7 +120,9 @@ public final class HistoryView {
 
         ScrollPane crosshairScroll = new ScrollPane(crosshair.getPanel());
         crosshairScroll.setFitToWidth(true);
-        crosshairScroll.setPrefWidth(230);
+        crosshairScroll.setPrefWidth(190);
+        crosshairScroll.setMinWidth(170);
+        TooltipSupport.set(crosshairScroll, Messages.get("tooltip.common.crosshairPanel"));
 
         HBox chartRow = new HBox(4, chart, crosshairScroll);
         HBox.setHgrow(chart, Priority.ALWAYS);
@@ -129,13 +133,15 @@ public final class HistoryView {
         VBox.setVgrow(chartRow, Priority.ALWAYS);
 
         SplitPane bottomSplit = new SplitPane(checklistBox, table);
-        bottomSplit.setDividerPositions(0.2);
+        bottomSplit.setDividerPositions(0.24);
 
         // Rotated layout (counter-clockwise once): chart on top, SSID list / log table on bottom.
         SplitPane mainSplit = new SplitPane(chartBox, bottomSplit);
-        mainSplit.setOrientation(javafx.geometry.Orientation.VERTICAL);
-        mainSplit.setDividerPositions(0.55);
+        mainSplit.setOrientation(Orientation.VERTICAL);
+        mainSplit.setDividerPositions(0.62);
         root.setCenter(mainSplit);
+        TooltipSupport.set(bssidChecklist, Messages.get("tooltip.history.checklist"));
+        TooltipSupport.set(table, Messages.get("tooltip.history.table"));
 
         if (database == null) {
             statusLabel.setText(Messages.get("history.status.noDatabase"));
@@ -198,6 +204,12 @@ public final class HistoryView {
         refreshBssidButton.setOnAction(e -> refreshBssidList());
         Button exportButton = new Button(Messages.get("history.button.exportVisibleCsv"));
         exportButton.setOnAction(e -> exportCsv());
+        TooltipSupport.set(rangeSelector, Messages.get("tooltip.history.range"));
+        TooltipSupport.set(bssidFilter, Messages.get("tooltip.history.bssidFilter"));
+        TooltipSupport.set(searchButton, Messages.get("tooltip.history.search"));
+        TooltipSupport.set(refreshBssidButton, Messages.get("tooltip.history.refreshBssid"));
+        TooltipSupport.set(exportButton, Messages.get("tooltip.history.exportCsv"));
+        TooltipSupport.set(statusLabel, Messages.get("tooltip.history.status"));
 
         HBox controls = new HBox(8, new Label(Messages.get("history.label.range")), rangeSelector,
                 new Label(Messages.get("history.label.bssid")), bssidFilter,
@@ -212,13 +224,17 @@ public final class HistoryView {
         chart.setCreateSymbols(false);
         chart.setAnimated(false);
         xAxis.setLabel(Messages.get("history.axis.elapsedSecondsInRange"));
+        xAxis.setForceZeroInRange(false);
         yAxis.setLabel(Messages.get("common.axis.rssiDbm"));
         yAxis.setAutoRanging(false);
+        TooltipSupport.install(chart, Messages.get("tooltip.history.chart"));
 
         crosshair = new ChartCrosshair(chart, chart, xAxis,
                 x -> Messages.get("history.crosshair.secondsFormat", x), this::entriesAt);
         yZoomResetButton = new Button(Messages.get("common.button.resetYAxis"));
         crosshair.installYAxisWheelZoom(yAxis, yZoomResetButton);
+        TooltipSupport.set(yZoomResetButton, Messages.get("tooltip.history.resetYAxis"));
+        TooltipSupport.set(crosshair.getPanel(), Messages.get("tooltip.common.crosshairPanel"));
     }
 
     /**

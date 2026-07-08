@@ -4,6 +4,7 @@ import com.waj.tool.i18n.Messages;
 import com.waj.tool.persistence.AppConfig;
 import com.waj.tool.persistence.AppConfigStore;
 import com.waj.tool.util.AppTheme;
+import com.waj.tool.util.TooltipSupport;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -39,25 +40,33 @@ public final class SettingsDialog {
         Spinner<Integer> rssiThresholdSpinner = new Spinner<>(-100, -30, config.rssiThresholdDbm);
         rssiThresholdSpinner.setEditable(true);
         commitOnFocusLoss(rssiThresholdSpinner);
+        TooltipSupport.set(rssiThresholdSpinner, Messages.get("tooltip.settings.rssiThreshold"));
 
         Spinner<Double> congestionSpinner = new Spinner<>(
                 new SpinnerValueFactory.DoubleSpinnerValueFactory(0, 500, config.channelCongestionThreshold, 5));
         congestionSpinner.setEditable(true);
         commitOnFocusLoss(congestionSpinner);
+        TooltipSupport.set(congestionSpinner, Messages.get("tooltip.settings.congestionThreshold"));
 
         CheckBox rssiAlertCheck = new CheckBox(Messages.get("settings.check.rssiAlert"));
         rssiAlertCheck.setSelected(config.rssiAlertEnabled);
+        TooltipSupport.set(rssiAlertCheck, Messages.get("tooltip.settings.rssiAlert"));
         CheckBox rogueApCheck = new CheckBox(Messages.get("settings.check.rogueAp"));
         rogueApCheck.setSelected(config.rogueApAlertEnabled);
+        TooltipSupport.set(rogueApCheck, Messages.get("tooltip.settings.rogueAp"));
         CheckBox newSsidCheck = new CheckBox(Messages.get("settings.check.newSsid"));
         newSsidCheck.setSelected(config.newSsidAlertEnabled);
+        TooltipSupport.set(newSsidCheck, Messages.get("tooltip.settings.newSsid"));
         CheckBox congestionCheck = new CheckBox(Messages.get("settings.check.congestion"));
         congestionCheck.setSelected(config.channelCongestionAlertEnabled);
+        TooltipSupport.set(congestionCheck, Messages.get("tooltip.settings.congestionAlert"));
         CheckBox notifyCheck = new CheckBox(Messages.get("settings.check.notifications"));
         notifyCheck.setSelected(config.windowsNotificationsEnabled);
+        TooltipSupport.set(notifyCheck, Messages.get("tooltip.settings.notifications"));
 
         TextField pingHostField = new TextField(config.defaultPingHost);
         pingHostField.setPromptText(Messages.get("settings.pingHost.prompt"));
+        TooltipSupport.set(pingHostField, Messages.get("tooltip.settings.pingHost"));
 
         // Language names are shown in their own native form regardless of the currently active UI
         // language (the same convention every OS/app language picker uses) - a user who can't read
@@ -67,9 +76,11 @@ public final class SettingsDialog {
         languageSelector.getItems().setAll("日本語", "English");
         String originalLanguage = config.language;
         languageSelector.getSelectionModel().select("en".equals(config.language) ? "English" : "日本語");
+        TooltipSupport.set(languageSelector, Messages.get("tooltip.settings.language"));
 
         ListView<String> trustedList = new ListView<>();
         refreshTrustedList(trustedList, trustedApRegistry);
+        TooltipSupport.set(trustedList, Messages.get("tooltip.settings.trustedList"));
         Button untrustButton = new Button(Messages.get("settings.button.untrust"));
         untrustButton.setOnAction(e -> {
             String selected = trustedList.getSelectionModel().getSelectedItem();
@@ -78,6 +89,7 @@ public final class SettingsDialog {
                 refreshTrustedList(trustedList, trustedApRegistry);
             }
         });
+        TooltipSupport.set(untrustButton, Messages.get("tooltip.settings.untrust"));
 
         GridPane form = new GridPane();
         form.setHgap(8);
@@ -97,6 +109,7 @@ public final class SettingsDialog {
 
         Button saveButton = new Button(Messages.get("settings.button.save"));
         Button cancelButton = new Button(Messages.get("common.button.cancel"));
+        TooltipSupport.set(saveButton, Messages.get("tooltip.settings.save"));
         HBox buttonBar = new HBox(8, saveButton, cancelButton);
 
         saveButton.setOnAction(e -> {

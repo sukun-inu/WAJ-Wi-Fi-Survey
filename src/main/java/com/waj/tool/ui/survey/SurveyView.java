@@ -14,6 +14,7 @@ import com.waj.tool.report.PdfReportGenerator;
 import com.waj.tool.report.ReportData;
 import com.waj.tool.util.AppTheme;
 import com.waj.tool.util.SignalColorScale;
+import com.waj.tool.util.TooltipSupport;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -101,6 +102,7 @@ public final class SurveyView {
     private void buildToolbar() {
         Button loadFloorPlanButton = new Button(Messages.get("survey.button.openFloorPlan"));
         loadFloorPlanButton.setOnAction(e -> onLoadFloorPlan());
+        TooltipSupport.set(loadFloorPlanButton, Messages.get("tooltip.survey.loadFloorPlan"));
 
         targetSelector.getItems().add(STRONGEST_KEY);
         targetSelector.getSelectionModel().select(STRONGEST_KEY);
@@ -120,32 +122,42 @@ public final class SurveyView {
             }
         });
         targetSelector.setOnAction(e -> redraw());
+        TooltipSupport.set(targetSelector, Messages.get("tooltip.survey.targetSelector"));
 
         surveyModeToggle.setOnAction(e -> surveyModeToggle.setText(
                 surveyModeToggle.isSelected()
                         ? Messages.get("survey.toggle.measureModeOn") : Messages.get("survey.toggle.measureModeOff")));
+        TooltipSupport.set(surveyModeToggle, Messages.get("tooltip.survey.measureMode"));
 
         Button clearButton = new Button(Messages.get("survey.button.clearPoints"));
         clearButton.setOnAction(e -> onClearPoints());
+        TooltipSupport.set(clearButton, Messages.get("tooltip.survey.clearPoints"));
 
         Button saveButton = new Button(Messages.get("survey.button.saveProject"));
         saveButton.setOnAction(e -> onSaveProject());
+        TooltipSupport.set(saveButton, Messages.get("tooltip.survey.saveProject"));
 
         Button loadButton = new Button(Messages.get("survey.button.loadProject"));
         loadButton.setOnAction(e -> onLoadProject());
+        TooltipSupport.set(loadButton, Messages.get("tooltip.survey.loadProject"));
 
         Button exportCsvButton = new Button(Messages.get("survey.button.exportPointsCsv"));
         exportCsvButton.setOnAction(e -> exportPoints(true));
+        TooltipSupport.set(exportCsvButton, Messages.get("tooltip.survey.exportPointsCsv"));
         Button exportJsonButton = new Button(Messages.get("survey.button.exportPointsJson"));
         exportJsonButton.setOnAction(e -> exportPoints(false));
+        TooltipSupport.set(exportJsonButton, Messages.get("tooltip.survey.exportPointsJson"));
 
         pingHostField.setPromptText(Messages.get("survey.pingHost.prompt"));
         pingHostField.setPrefWidth(130);
+        TooltipSupport.set(pingHostField, Messages.get("tooltip.survey.pingHost"));
 
         Button reportHtmlButton = new Button(Messages.get("survey.button.exportReportHtml"));
         reportHtmlButton.setOnAction(e -> exportReport(true));
+        TooltipSupport.set(reportHtmlButton, Messages.get("tooltip.survey.reportHtml"));
         Button reportPdfButton = new Button(Messages.get("survey.button.exportReportPdf"));
         reportPdfButton.setOnAction(e -> exportReport(false));
+        TooltipSupport.set(reportPdfButton, Messages.get("tooltip.survey.reportPdf"));
 
         HBox toolbar = new HBox(8, loadFloorPlanButton, new Label(Messages.get("survey.label.targetAp")), targetSelector,
                 surveyModeToggle, new Label(Messages.get("survey.label.ping")), pingHostField,
@@ -157,6 +169,7 @@ public final class SurveyView {
     }
 
     private void buildCanvas() {
+        TooltipSupport.install(canvas, Messages.get("tooltip.survey.canvas"));
         canvas.setOnMouseClicked(e -> {
             if (!surveyModeToggle.isSelected()) {
                 return;
