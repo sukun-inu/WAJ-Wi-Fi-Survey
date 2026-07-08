@@ -120,7 +120,7 @@ public final class HistoryView {
         crosshairScroll.setFitToWidth(true);
         crosshairScroll.setPrefWidth(230);
 
-        HBox chartRow = new HBox(4, checklistBox, chart, crosshairScroll);
+        HBox chartRow = new HBox(4, chart, crosshairScroll);
         HBox.setHgrow(chart, Priority.ALWAYS);
         HBox chartToolbar = new HBox(6, yZoomResetButton);
         chartToolbar.setAlignment(Pos.CENTER_LEFT);
@@ -128,9 +128,14 @@ public final class HistoryView {
         chartBox.getStyleClass().add("card");
         VBox.setVgrow(chartRow, Priority.ALWAYS);
 
-        SplitPane split = new SplitPane(chartBox, table);
-        split.setDividerPositions(0.5);
-        root.setCenter(split);
+        SplitPane bottomSplit = new SplitPane(checklistBox, table);
+        bottomSplit.setDividerPositions(0.2);
+
+        // Rotated layout (counter-clockwise once): chart on top, SSID list / log table on bottom.
+        SplitPane mainSplit = new SplitPane(chartBox, bottomSplit);
+        mainSplit.setOrientation(javafx.geometry.Orientation.VERTICAL);
+        mainSplit.setDividerPositions(0.55);
+        root.setCenter(mainSplit);
 
         if (database == null) {
             statusLabel.setText(Messages.get("history.status.noDatabase"));

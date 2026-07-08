@@ -474,10 +474,10 @@ public final class DashboardView {
         HBox exportBar = new HBox(6, new Label("Access Points"), exportCsvButton, exportJsonButton);
         exportBar.setAlignment(Pos.CENTER_LEFT);
 
-        VBox left = new VBox(6, exportBar, apTable);
-        left.setPadding(new Insets(8));
+        VBox accessPointsBox = new VBox(6, exportBar, apTable);
+        accessPointsBox.setPadding(new Insets(8));
         VBox.setVgrow(apTable, Priority.ALWAYS);
-        left.setPrefWidth(640);
+        accessPointsBox.setPrefHeight(260);
 
         HBox rssiRow = new HBox(4, rssiHistoryChart, rssiCrosshair.getPanel());
         HBox.setHgrow(rssiHistoryChart, Priority.ALWAYS);
@@ -501,12 +501,13 @@ public final class DashboardView {
         spectrumBox.getStyleClass().add("card");
         VBox.setVgrow(traceRow, Priority.ALWAYS);
 
-        SplitPane rightSplit = new SplitPane(rssiBox, spectrumBox);
-        rightSplit.setOrientation(Orientation.VERTICAL);
-        rightSplit.setDividerPositions(0.36);
+        // Rotated layout (counter-clockwise once): charts on the top row, AP/SSID list below.
+        SplitPane chartsSplit = new SplitPane(rssiBox, spectrumBox);
+        chartsSplit.setDividerPositions(0.5);
 
-        SplitPane mainSplit = new SplitPane(left, rightSplit);
-        mainSplit.setDividerPositions(0.42);
+        SplitPane mainSplit = new SplitPane(chartsSplit, accessPointsBox);
+        mainSplit.setOrientation(Orientation.VERTICAL);
+        mainSplit.setDividerPositions(0.72);
 
         root.setCenter(mainSplit);
 
@@ -514,24 +515,24 @@ public final class DashboardView {
         // chart hidden); double-click the same chart again to restore the normal 3-pane layout.
         rssiHistoryChart.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
-                toggleChartFullscreen(mainSplit, rightSplit, rssiBox, 0);
+                toggleChartFullscreen(mainSplit, chartsSplit, rssiBox, 0);
             }
         });
         spectrumChart.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
-                toggleChartFullscreen(mainSplit, rightSplit, spectrumBox, 1);
+                toggleChartFullscreen(mainSplit, chartsSplit, spectrumBox, 1);
             }
         });
     }
 
-    private void toggleChartFullscreen(SplitPane mainSplit, SplitPane rightSplit, VBox box, int restoreIndex) {
+    private void toggleChartFullscreen(SplitPane mainSplit, SplitPane chartsSplit, VBox box, int restoreIndex) {
         if (root.getCenter() == mainSplit) {
-            rightSplit.getItems().remove(box);
+            chartsSplit.getItems().remove(box);
             root.setCenter(box);
         } else {
             root.setCenter(mainSplit);
-            if (!rightSplit.getItems().contains(box)) {
-                rightSplit.getItems().add(Math.min(restoreIndex, rightSplit.getItems().size()), box);
+            if (!chartsSplit.getItems().contains(box)) {
+                chartsSplit.getItems().add(Math.min(restoreIndex, chartsSplit.getItems().size()), box);
             }
         }
     }
