@@ -1,13 +1,20 @@
 package com.waj.tool;
 
+import com.waj.tool.alert.Alert;
+import com.waj.tool.alert.AlertContext;
+import com.waj.tool.alert.AlertEngine;
+import com.waj.tool.alert.NotificationService;
 import com.waj.tool.model.ApSnapshot;
 import com.waj.tool.model.ScanSnapshot;
+import com.waj.tool.persistence.AppConfig;
+import com.waj.tool.persistence.AppConfigStore;
 import com.waj.tool.persistence.AppPaths;
 import com.waj.tool.persistence.ScanLogDatabase;
 import com.waj.tool.wlan.WlanPoller;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -72,6 +79,15 @@ public final class HeadlessRunner {
         }
         ScanLogDatabase database = scanLogDatabase;
 
+        // Same alert pipeline the GUI uses (RSSI threshold, rogue-AP, new-SSID, channel-congestion
+        // rules) plus Windows tray notifications - both are plain java.awt/JDK APIs with no JavaFX
+        // dependency, so they work identically here. Without this, headless mode - explicitly
+        // meant for unattended/server monitoring - would silently have no alerting at all.
+        AppConfig appConfig = AppConfigStore.load();
+        AlertContext alertContext = new AlertContext(appConfig);
+        AlertEngine alertEngine = new AlertEngine(alertContext);
+        NotificationService notificationService = new NotificationService();
+
         CountDownLatch shutdownLatch = new CountDownLatch(1);
         WlanPoller poller = new WlanPoller(
                 pollIntervalMillis,
@@ -82,6 +98,11 @@ public final class HeadlessRunner {
                         } catch (Exception ignored) {
                             // best-effort logging; a DB hiccup must not take down the poller
                         }
+                    }
+                    List<Alert> firedAlerts = alertEngine.onSnapshot(snapshot);
+                    for (Alert fired : firedAlerts) {
+                        notificationService.notify(fired, appConfig.windowsNotificationsEnabled);
+                        System.out.println("[" + fired.severity() + "] " + fired.category() + ": " + fired.message());
                     }
                     printSummary(snapshot);
                 },

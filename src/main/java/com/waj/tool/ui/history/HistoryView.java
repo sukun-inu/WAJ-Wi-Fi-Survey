@@ -51,10 +51,14 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.format.SignStyle;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -82,7 +86,14 @@ public final class HistoryView {
     private final ScanLogDatabase database;
     private final CategoricalColorPalette colorPalette;
 
-    private static final DateTimeFormatter TIME_FIELD_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    // A bare DateTimeFormatter.ofPattern("HH:mm") demands a strict 2-digit width when *parsing*
+    // (not just formatting), rejecting perfectly valid input like "9:30" - built with
+    // appendValue(..., 1, 2, ...) instead so 1- or 2-digit hour/minute are both accepted.
+    private static final DateTimeFormatter TIME_FIELD_FORMATTER = new DateTimeFormatterBuilder()
+            .appendValue(ChronoField.HOUR_OF_DAY, 1, 2, SignStyle.NOT_NEGATIVE)
+            .appendLiteral(':')
+            .appendValue(ChronoField.MINUTE_OF_HOUR, 1, 2, SignStyle.NOT_NEGATIVE)
+            .toFormatter(Locale.ROOT);
 
     private final Map<String, Long> rangeMillisByLabel = new LinkedHashMap<>();
     private final ComboBox<String> rangeSelector = new ComboBox<>();
@@ -436,8 +447,11 @@ public final class HistoryView {
             return Optional.empty();
         }
         try {
-            LocalTime fromTime = LocalTime.parse(fromTimeField.getText().trim(), TIME_FIELD_FORMATTER);
-            LocalTime toTime = LocalTime.parse(toTimeField.getText().trim(), TIME_FIELD_FORMATTER);
+            // strip() (not trim()) so a leading/trailing full-width/ideographic space (U+3000,
+            // which Japanese IME input can produce and trim() does not remove) doesn't cause an
+            // otherwise-valid-looking time to fail parsing.
+            LocalTime fromTime = LocalTime.parse(fromTimeField.getText().strip(), TIME_FIELD_FORMATTER);
+            LocalTime toTime = LocalTime.parse(toTimeField.getText().strip(), TIME_FIELD_FORMATTER);
             long from = fromDate.atTime(fromTime).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
             long to = toDate.atTime(toTime).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
             if (to <= from) {
@@ -449,25 +463,34 @@ public final class HistoryView {
         }
     }
 
+    /**
+     * Resolves whatever range is currently selected (custom date/time pickers, or a preset) -
+     * shared by {@link #search()} and {@link #exportAllCsv()} so both always act on the range
+     * actually shown on screen right now, rather than {@code exportAllCsv()} reusing whatever
+     * {@link #chartRangeFromMillis}/{@link #chartRangeToMillis} a previous {@code search()} call
+     * happened to leave behind (stale if the user edited the custom-range fields since then
+     * without re-clicking "Search"). Empty only for an invalid/incomplete custom range.
+     */
+    private Optional<TimeRange> resolveCurrentRange() {
+        if (customRangeLabel.equals(rangeSelector.getValue())) {
+            return parseCustomRange();
+        }
+        long rangeMillis = rangeMillisByLabel.getOrDefault(rangeSelector.getValue(), 15 * 60_000L);
+        long to = System.currentTimeMillis();
+        return Optional.of(new TimeRange(to - rangeMillis, to));
+    }
+
     private void search() {
         if (database == null) {
             return;
         }
-        long from;
-        long to;
-        if (customRangeLabel.equals(rangeSelector.getValue())) {
-            Optional<TimeRange> range = parseCustomRange();
-            if (range.isEmpty()) {
-                showAlert(Messages.get("history.alert.invalidCustomRange"));
-                return;
-            }
-            from = range.get().fromEpochMilli();
-            to = range.get().toEpochMilli();
-        } else {
-            long rangeMillis = rangeMillisByLabel.getOrDefault(rangeSelector.getValue(), 15 * 60_000L);
-            to = System.currentTimeMillis();
-            from = to - rangeMillis;
+        Optional<TimeRange> range = resolveCurrentRange();
+        if (range.isEmpty()) {
+            showAlert(Messages.get("history.alert.invalidCustomRange"));
+            return;
         }
+        long from = range.get().fromEpochMilli();
+        long to = range.get().toEpochMilli();
         chartRangeFromMillis = from;
         chartRangeToMillis = to;
 
@@ -579,8 +602,9 @@ public final class HistoryView {
         if (database == null) {
             return;
         }
-        if (chartRangeFromMillis == 0 && chartRangeToMillis == 0) {
-            showAlert(Messages.get("history.export.noRows"));
+        Optional<TimeRange> range = resolveCurrentRange();
+        if (range.isEmpty()) {
+            showAlert(Messages.get("history.alert.invalidCustomRange"));
             return;
         }
         FileChooser chooser = new FileChooser();
@@ -591,8 +615,8 @@ public final class HistoryView {
             return;
         }
         String bssidFilterValue = bssidFilter.getValue() == null ? "" : bssidFilter.getValue().bssid();
-        long from = chartRangeFromMillis;
-        long to = chartRangeToMillis;
+        long from = range.get().fromEpochMilli();
+        long to = range.get().toEpochMilli();
         exportAllButton.setDisable(true);
         statusLabel.setText(Messages.get("history.status.exportedAll"));
         exportExecutor.execute(() -> {

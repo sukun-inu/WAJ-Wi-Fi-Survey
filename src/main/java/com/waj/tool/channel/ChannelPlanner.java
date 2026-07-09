@@ -80,9 +80,12 @@ public final class ChannelPlanner {
          *                    overlaps, but only ever "lives" on one). Callers that want to draw an
          *                    AP's own occupancy curve, as opposed to reading its congestion
          *                    contribution, should match on this rather than on {@code weight}.
+         * @param widthMhz    the AP's own detected channel width (20/40/80/160), for callers that
+         *                    want to draw that occupancy curve at its real width instead of a
+         *                    fixed per-band default.
          */
         public record ApContribution(String bssid, String ssid, int homeChannel, double weight, double contribution,
-                                      Integer utilizationPercent) {
+                                      Integer utilizationPercent, int widthMhz) {
         }
     }
 
@@ -135,13 +138,21 @@ public final class ChannelPlanner {
             }
             // Distance is measured from the AP's *effective* center (its primary channel for a
             // plain 20MHz AP, or the HT40/VHT80/VHT160 block's actual center otherwise - see
-            // ChannelWidthParser), and the falloff radius scales with channelWidthMhz so a wider
-            // AP is correctly treated as overlapping more of the band than a 20MHz one at the same
-            // position. widthFactor is 1.0 for the (overwhelmingly common) plain 20MHz case, which
-            // makes this reduce to exactly the previous fixed-radius formula for both bands.
+            // ChannelWidthParser). A channel genuinely inside that AP's own declared occupied
+            // width gets full weight - an 80MHz AP occupies all four of its 20MHz sub-channels
+            // equally, there's no physical reason its own edge channel should count for less than
+            // its middle one - while a channel beyond that footprint falls back to the original
+            // distance-based falloff (modelling adjacent-channel leakage into spectrum the AP
+            // isn't actually using). halfWidthUnits is 2 for the plain-20MHz case, which combined
+            // with the `channelWidthMhz() > 20` guard means this never fires for a 20MHz AP - the
+            // formula reduces to exactly the original fixed-radius falloff for both bands.
             double widthFactor = ap.channelWidthMhz() / 20.0;
+            double halfWidthUnits = widthFactor * 2.0;
+            double distance = Math.abs(ap.effectiveCenterChannel() - channel);
             double falloffRadius = (band.equals("2.4GHz") ? 4.0 : 2.0) * widthFactor;
-            double weight = Math.max(0, 1.0 - Math.abs(ap.effectiveCenterChannel() - channel) / falloffRadius);
+            double weight = (ap.channelWidthMhz() > 20 && distance <= halfWidthUnits)
+                    ? 1.0
+                    : Math.max(0, 1.0 - distance / falloffRadius);
             if (weight <= 0) {
                 continue;
             }
@@ -151,7 +162,7 @@ public final class ChannelPlanner {
             double contribution = weight * combined;
             total += contribution;
             contributions.add(new Recommendation.ApContribution(
-                    ap.bssid(), ap.ssid(), ap.channel(), weight, contribution, utilization));
+                    ap.bssid(), ap.ssid(), ap.channel(), weight, contribution, utilization, ap.channelWidthMhz()));
         }
         return new ScoreResult(total, contributions);
     }

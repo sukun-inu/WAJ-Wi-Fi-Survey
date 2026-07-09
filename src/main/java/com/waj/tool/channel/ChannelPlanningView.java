@@ -298,7 +298,13 @@ public final class ChannelPlanningView {
             for (ChannelPlanner.Recommendation.ApContribution c : sorted) {
                 XYChart.Series<Number, Number> series = new XYChart.Series<>();
                 series.setName(c.bssid());
-                for (double[] pt : trapezoidPoints(centerMhz, channelWidth, c.contribution())) {
+                // Draw at this AP's own detected width (c.widthMhz()), not the fixed per-band
+                // default, so a wide HT40/VHT80/160 AP's curve visually reflects the same wider
+                // occupancy its congestion score now accounts for - falling back to the fixed
+                // default only widens the drawing for the (rare) case a detected width is somehow
+                // narrower than one plain channel, which would otherwise draw a sliver too thin to see.
+                double curveWidthMhz = Math.max(channelWidth, c.widthMhz() / 20.0 * channelWidth);
+                for (double[] pt : trapezoidPoints(centerMhz, curveWidthMhz, c.contribution())) {
                     series.getData().add(new XYChart.Data<>(pt[0], pt[1]));
                 }
                 p.chart.getData().add(series);

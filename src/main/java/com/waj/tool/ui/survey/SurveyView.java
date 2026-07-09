@@ -76,6 +76,15 @@ public final class SurveyView {
         return t;
     });
 
+    // Project loading decodes JSON plus (for a project with an embedded floor plan) a Base64
+    // image potentially several MB in size - both run here, off the FX Application thread, so a
+    // large project doesn't freeze the UI while loading (see resolveFloorPlan()).
+    private final ExecutorService projectIoExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "survey-project-io");
+        t.setDaemon(true);
+        return t;
+    });
+
     private final Map<String, String> ssidByBssid = new HashMap<>();
     private final List<SurveyPoint> points = new ArrayList<>();
 
@@ -143,7 +152,17 @@ public final class SurveyView {
                 return s;
             }
         });
-        targetSelector.setOnAction(e -> redraw());
+        targetSelector.setOnAction(e -> {
+            String target = targetSelector.getSelectionModel().getSelectedItem();
+            if (comparisonModeToggle.isSelected() && (target == null || target.isEmpty())) {
+                // Comparison mode requires a specific AP identity (see comparisonModeToggle's own
+                // handler) - switching back to "Strongest (auto)" while it's active would silently
+                // start diffing two different physical APs, so turn comparison mode off instead.
+                comparisonModeToggle.setSelected(false);
+                showAlert(Messages.get("survey.comparison.requiresSpecificTarget"));
+            }
+            redraw();
+        });
         TooltipSupport.set(targetSelector, Messages.get("tooltip.survey.targetSelector"));
 
         surveyModeToggle.setOnAction(e -> surveyModeToggle.setText(
@@ -196,10 +215,22 @@ public final class SurveyView {
         loadComparisonButton.setOnAction(e -> onLoadComparison());
         TooltipSupport.set(loadComparisonButton, Messages.get("tooltip.survey.loadComparison"));
         comparisonModeToggle.setOnAction(e -> {
-            if (comparisonModeToggle.isSelected() && comparisonPoints == null) {
-                comparisonModeToggle.setSelected(false);
-                showAlert(Messages.get("survey.comparison.noBaseline"));
-                return;
+            if (comparisonModeToggle.isSelected()) {
+                if (comparisonPoints == null) {
+                    comparisonModeToggle.setSelected(false);
+                    showAlert(Messages.get("survey.comparison.noBaseline"));
+                    return;
+                }
+                // A delta only means something between two readings of the *same* AP - with the
+                // target left at "Strongest (auto)", the current and baseline surveys would each
+                // independently pick whichever BSSID happened to be locally strongest at that
+                // point, which can silently be two different physical APs.
+                String target = targetSelector.getSelectionModel().getSelectedItem();
+                if (target == null || target.isEmpty()) {
+                    comparisonModeToggle.setSelected(false);
+                    showAlert(Messages.get("survey.comparison.requiresSpecificTarget"));
+                    return;
+                }
             }
             redraw();
         });
@@ -332,10 +363,35 @@ public final class SurveyView {
         if (!confirmDiscardExistingPoints()) {
             return;
         }
+        clearComparisonState();
         loadFloorPlanFile(file);
         points.clear();
         statusLabel.setText(Messages.get("survey.status.floorPlanLoaded", file.getName()));
         redraw();
+    }
+
+    /**
+     * Clears the loaded comparison baseline and turns comparison mode off - called whenever a
+     * new/unrelated project or floor plan is loaded, since a stale baseline from a different
+     * survey would otherwise keep producing a spatially meaningless delta heatmap/summary with no
+     * warning that the baseline no longer corresponds to what's on screen.
+     */
+    private void clearComparisonState() {
+        comparisonPoints = null;
+        comparisonProjectName = null;
+        comparisonModeToggle.setSelected(false);
+    }
+
+    /**
+     * Resets floor-plan state to "nothing loaded" - called before resolving a newly-loaded
+     * project's floor plan, so a resolution failure (no embedded image, and its floorPlanPath
+     * doesn't exist on this machine) doesn't leave the *previous* project's image displayed
+     * underneath the new project's points.
+     */
+    private void clearFloorPlan() {
+        floorPlanImage = null;
+        floorPlanImageBytes = null;
+        floorPlanPath = null;
     }
 
     /**
@@ -365,14 +421,6 @@ public final class SurveyView {
         } catch (IOException e) {
             this.floorPlanImageBytes = null;
         }
-        resizeCanvasToFit();
-    }
-
-    /** Restores a floor plan embedded in a loaded project (see {@link #onLoadProject()}). */
-    private void loadFloorPlanFromBytes(byte[] bytes, String originalPath) {
-        this.floorPlanImage = new Image(new ByteArrayInputStream(bytes));
-        this.floorPlanImageBytes = bytes;
-        this.floorPlanPath = originalPath;
         resizeCanvasToFit();
     }
 
@@ -446,27 +494,71 @@ public final class SurveyView {
         if (!confirmDiscardExistingPoints()) {
             return;
         }
-        try {
-            SurveyProject project = SurveyProjectStore.load(file);
-            if (project.floorPlanImageBase64 != null && !project.floorPlanImageBase64.isEmpty()) {
-                loadFloorPlanFromBytes(Base64.getDecoder().decode(project.floorPlanImageBase64), project.floorPlanPath);
-            } else if (project.floorPlanPath != null) {
-                // Older project file (saved before the floor plan was embedded) - fall back to
-                // resolving the absolute path it was saved with.
-                File floorPlanFile = new File(project.floorPlanPath);
-                if (floorPlanFile.exists()) {
-                    loadFloorPlanFile(floorPlanFile);
-                } else {
-                    showAlert(Messages.get("survey.alert.floorPlanNotFound", project.floorPlanPath));
-                }
+        clearComparisonState();
+        statusLabel.setText(Messages.get("survey.status.loadingProject", file.getName()));
+        // JSON parsing plus (for a project with an embedded floor plan) Base64-decoding and
+        // JavaFX-Image-decoding a potentially multi-MB image all happen here, off the FX
+        // Application thread - constructing an Image from bytes/a URI is safe from any thread (it
+        // isn't part of the scene graph), only the final field assignment/canvas redraw below
+        // needs Platform.runLater.
+        projectIoExecutor.execute(() -> {
+            try {
+                SurveyProject project = SurveyProjectStore.load(file);
+                ResolvedFloorPlan resolved = resolveFloorPlan(project);
+                Platform.runLater(() -> {
+                    clearFloorPlan();
+                    if (resolved.image() != null) {
+                        floorPlanImage = resolved.image();
+                        floorPlanImageBytes = resolved.bytes();
+                        floorPlanPath = resolved.path();
+                        resizeCanvasToFit();
+                    } else if (resolved.missingPath() != null) {
+                        showAlert(Messages.get("survey.alert.floorPlanNotFound", resolved.missingPath()));
+                    }
+                    points.clear();
+                    points.addAll(project.points);
+                    statusLabel.setText(Messages.get("survey.status.projectLoaded", file.getName(), points.size()));
+                    redraw();
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> showAlert(Messages.get("survey.alert.loadFailed", e.getMessage())));
             }
-            points.clear();
-            points.addAll(project.points);
-            statusLabel.setText(Messages.get("survey.status.projectLoaded", file.getName(), points.size()));
-            redraw();
-        } catch (Exception e) {
-            showAlert(Messages.get("survey.alert.loadFailed", e.getMessage()));
+        });
+    }
+
+    /** Outcome of resolving a loaded project's floor plan - at most one of {@link #image}/{@link #missingPath} is non-null. */
+    private record ResolvedFloorPlan(Image image, byte[] bytes, String path, String missingPath) {
+    }
+
+    /**
+     * Decodes a project's floor plan (embedded Base64 image if present, else the legacy absolute
+     * {@code floorPlanPath}) into a ready-to-display {@link Image} - safe to call off the FX
+     * Application thread, so {@link #onLoadProject()} can run this on a background thread instead
+     * of decoding a potentially large image inline in a button click handler.
+     */
+    private ResolvedFloorPlan resolveFloorPlan(SurveyProject project) {
+        if (project.floorPlanImageBase64 != null && !project.floorPlanImageBase64.isEmpty()) {
+            byte[] bytes = Base64.getDecoder().decode(project.floorPlanImageBase64);
+            Image image = new Image(new ByteArrayInputStream(bytes));
+            return new ResolvedFloorPlan(image, bytes, project.floorPlanPath, null);
         }
+        if (project.floorPlanPath != null) {
+            // Older project file (saved before the floor plan was embedded) - fall back to
+            // resolving the absolute path it was saved with.
+            File floorPlanFile = new File(project.floorPlanPath);
+            if (!floorPlanFile.exists()) {
+                return new ResolvedFloorPlan(null, null, null, project.floorPlanPath);
+            }
+            Image image = new Image(floorPlanFile.toURI().toString());
+            byte[] bytes;
+            try {
+                bytes = Files.readAllBytes(floorPlanFile.toPath());
+            } catch (IOException e) {
+                bytes = null;
+            }
+            return new ResolvedFloorPlan(image, bytes, project.floorPlanPath, null);
+        }
+        return new ResolvedFloorPlan(null, null, null, null);
     }
 
     private void exportPoints(boolean csv) {
@@ -534,17 +626,33 @@ public final class SurveyView {
         String targetBssid = (target == null || target.isEmpty()) ? null : target;
         boolean comparing = comparisonModeToggle.isSelected() && comparisonPoints != null;
 
+        // Computed at most once per redraw() and shared with drawCoverageHoles() below - both the
+        // heatmap image and the coverage-hole overlay must read the exact same interpolated values
+        // for the hatching to never visually disagree with the colors it's drawn on top of (and
+        // recomputing IDW a second time for the same points/target would otherwise be wasted work).
+        Double[][] currentValueGrid = null;
+
         if (!points.isEmpty()) {
-            javafx.scene.image.WritableImage heatmap = comparing
-                    ? HeatmapRenderer.renderDelta(points, comparisonPoints, targetBssid)
-                    : HeatmapRenderer.render(points, targetBssid);
+            javafx.scene.image.WritableImage heatmap;
+            if (comparing) {
+                heatmap = HeatmapRenderer.renderDelta(points, comparisonPoints, targetBssid);
+            } else {
+                currentValueGrid = HeatmapRenderer.computeValueGrid(points, targetBssid);
+                heatmap = HeatmapRenderer.colorize(currentValueGrid);
+            }
             gc.setImageSmoothing(true);
             gc.drawImage(heatmap, 0, 0, HeatmapRenderer.GRID_WIDTH, HeatmapRenderer.GRID_HEIGHT,
                     0, 0, canvas.getWidth(), canvas.getHeight());
         }
 
         if (coverageHoleToggle.isSelected() && !points.isEmpty()) {
-            drawCoverageHoles(gc, targetBssid);
+            if (currentValueGrid == null) {
+                // Comparison mode was showing the delta heatmap above, which doesn't compute the
+                // plain absolute-value grid coverage holes need (holes are always about the
+                // *current* survey's own absolute coverage, regardless of comparison mode).
+                currentValueGrid = HeatmapRenderer.computeValueGrid(points, targetBssid);
+            }
+            drawCoverageHoles(gc, currentValueGrid);
         } else {
             coverageSummaryLabel.setText("");
         }
@@ -566,14 +674,17 @@ public final class SurveyView {
     }
 
     /**
-     * Overlays a diagonal "X" hatch on every heatmap-grid cell (sampled at a coarser stride than
+     * Overlays a diagonal "X" hatch on every heatmap-grid cell (grouped into a coarser stride than
      * {@link HeatmapRenderer}'s own pixel grid, so the marks read as a hazard-stripe pattern rather
-     * than a solid block) whose IDW-interpolated RSSI falls below {@link #coverageThresholdField}.
-     * Also updates {@link #coverageSummaryLabel} with the fraction of surveyed area affected. An
-     * unparsable threshold falls back to -75dBm (this app's own default RSSI alert threshold)
-     * rather than silently disabling the feature.
+     * than a solid block) whose interpolated RSSI falls below {@link #coverageThresholdField}.
+     * Reads {@code valueGrid} (computed once by the caller via {@link
+     * HeatmapRenderer#computeValueGrid}) rather than independently re-running IDW, so the hatching
+     * can never visually disagree with the heatmap image it's drawn on top of. Also updates {@link
+     * #coverageSummaryLabel} with the fraction of surveyed area affected. An unparsable threshold
+     * falls back to -75dBm (this app's own default RSSI alert threshold) rather than silently
+     * disabling the feature.
      */
-    private void drawCoverageHoles(GraphicsContext gc, String targetBssid) {
+    private void drawCoverageHoles(GraphicsContext gc, Double[][] valueGrid) {
         double thresholdDbm;
         try {
             thresholdDbm = Double.parseDouble(coverageThresholdField.getText().trim());
@@ -588,10 +699,10 @@ public final class SurveyView {
         int coveredCells = 0;
         int holeCells = 0;
         for (int gy = 0; gy < HeatmapRenderer.GRID_HEIGHT; gy += stride) {
-            double ny = (gy + stride / 2.0) / HeatmapRenderer.GRID_HEIGHT;
+            int sampleGy = Math.min(gy + stride / 2, HeatmapRenderer.GRID_HEIGHT - 1);
             for (int gx = 0; gx < HeatmapRenderer.GRID_WIDTH; gx += stride) {
-                double nx = (gx + stride / 2.0) / HeatmapRenderer.GRID_WIDTH;
-                Double value = IdwInterpolator.interpolate(nx, ny, points, targetBssid);
+                int sampleGx = Math.min(gx + stride / 2, HeatmapRenderer.GRID_WIDTH - 1);
+                Double value = valueGrid[sampleGy][sampleGx];
                 if (value == null) {
                     continue;
                 }

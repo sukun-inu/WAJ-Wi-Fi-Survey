@@ -44,13 +44,16 @@ public final class ScanLogDatabase implements AutoCloseable {
     }
 
     private final Connection connection;
+    private final String jdbcUrl;
 
-    private ScanLogDatabase(Connection connection) {
+    private ScanLogDatabase(Connection connection, String jdbcUrl) {
         this.connection = connection;
+        this.jdbcUrl = jdbcUrl;
     }
 
     public static ScanLogDatabase open(File dbFile) throws SQLException {
-        Connection conn = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
+        String jdbcUrl = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+        Connection conn = DriverManager.getConnection(jdbcUrl);
         try {
             try (Statement st = conn.createStatement()) {
                 st.execute("PRAGMA journal_mode=WAL");
@@ -96,7 +99,7 @@ public final class ScanLogDatabase implements AutoCloseable {
             }
             throw e;
         }
-        return new ScanLogDatabase(conn);
+        return new ScanLogDatabase(conn, jdbcUrl);
     }
 
     public synchronized void insertScanSamples(ScanSnapshot snapshot) {
@@ -218,14 +221,25 @@ public final class ScanLogDatabase implements AutoCloseable {
      * 5000 rows to keep the History table/chart responsive, but a full-range audit export (e.g. a
      * 7-day range across many APs) can legitimately be far larger, so this reads the {@link
      * ResultSet} row-by-row rather than materializing it as a {@code List<ScanSampleRow>} first.
+     *
+     * <p>Deliberately NOT {@code synchronized} on this instance, and deliberately opens its own
+     * dedicated {@link Connection} instead of using {@link #connection} - every other method here
+     * is synchronized because they all share one {@code Connection} object, which most JDBC
+     * drivers (including this app's SQLite one) don't allow concurrent use of from multiple
+     * threads. A large streamed export can run for seconds to minutes; holding the shared instance
+     * lock for that whole duration would block the WLAN poller's own {@link #insertScanSamples}
+     * calls (and any other History action on the JavaFX thread) for just as long. A second,
+     * independent connection to the same (WAL-mode) database file lets this read proceed
+     * concurrently with the poller's writes instead.
      */
-    public synchronized long exportSamplesToCsv(long fromEpochMilli, long toEpochMilli, String bssidFilter, File file)
+    public long exportSamplesToCsv(long fromEpochMilli, long toEpochMilli, String bssidFilter, File file)
             throws IOException {
         String sql = "SELECT ts_epoch_ms,bssid,ssid,channel,band,rssi,link_quality,phy_type,security FROM scan_samples " +
                 "WHERE ts_epoch_ms BETWEEN ? AND ?" +
                 (bssidFilter != null && !bssidFilter.isEmpty() ? " AND bssid = ?" : "") +
                 " ORDER BY ts_epoch_ms DESC";
-        try (PreparedStatement ps = connection.prepareStatement(sql);
+        try (Connection exportConnection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement ps = exportConnection.prepareStatement(sql);
              Writer writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
             ps.setLong(1, fromEpochMilli);
             ps.setLong(2, toEpochMilli);

@@ -128,6 +128,23 @@ Compress-Archive -Path $appImageDir -DestinationPath $zipPath
 
 $msiPath = $null
 if ($Msi) {
+    # A fixed upgrade code only lets Windows Installer upgrade in place when the new MSI's
+    # ProductVersion is strictly greater than what's installed - jpackage's generated WiX
+    # Upgrade-table rows exclude the equal-version boundary, and jpackage also randomizes
+    # ProductCode on every run, so rebuilding -Msi again at the *same* $appVersion (e.g. a
+    # pom.xml still on 0.1.0-SNAPSHOT across two dev builds) would neither upgrade nor block -
+    # it would register as a second, unrelated Programs-and-Features entry. Warn up front
+    # rather than let that surprise show up only after installing.
+    try {
+        $existing = Get-Package -Name $appName -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($existing -and $existing.Version -eq $appVersion) {
+            Write-Host "WARNING: '$appName' $appVersion is already installed. Windows Installer will NOT upgrade it in place from an MSI built at the same version - bump the version in pom.xml first if this MSI is meant to replace it." -ForegroundColor Yellow
+        }
+    } catch {
+        # best-effort check only - Get-Package's provider can be unavailable/slow on some
+        # systems, and that's not worth failing the whole release build over.
+    }
+
     $wixDir = Ensure-Wix -RootDir $root
     Write-Host "== Running jpackage (--type msi) ==" -ForegroundColor Cyan
     # jpackage shells out to WiX's own candle.exe/light.exe rather than taking a path to them

@@ -18,6 +18,11 @@ class ChannelPlannerTest {
                 true, SecurityType.WPA2, null, Instant.now());
     }
 
+    private static ApSnapshot wideAp(int channel, String band, int rssi, int widthMhz, int effectiveCenterChannel) {
+        return new ApSnapshot("test", "AA:BB:CC:DD:EE:FF", channel, 0, band, rssi, 90, "n/a",
+                true, SecurityType.WPA2, null, Instant.now(), widthMhz, effectiveCenterChannel);
+    }
+
     @Test
     void recommendsLeastCongestedStandardChannelIn24Ghz() {
         List<ApSnapshot> aps = List.of(
@@ -96,6 +101,35 @@ class ChannelPlannerTest {
         assertTrue(rec.allScores().containsKey(1));
         assertTrue(rec.allScores().containsKey(93));
         assertTrue(rec.allScores().size() >= 24);
+    }
+
+    @Test
+    void wideChannelApScoresFullWeightAcrossItsWholeOccupiedWidth() {
+        // VHT80 AP: primary channel 36, VHT segment-0 center 42 (spans 36-48) - every one of those
+        // four 20MHz channels is genuinely inside this AP's occupied 80MHz block, so none of them
+        // should be discounted relative to the others (previously: 36/48 scored 0.25x, 40/44 0.75x,
+        // an unphysical edge-vs-middle artifact of centering the falloff on effectiveCenterChannel).
+        ApSnapshot wideAp = wideAp(36, "5GHz", -30, 80, 42);
+        ChannelPlanner.Recommendation rec = ChannelPlanner.recommend(List.of(wideAp), "5GHz");
+        double scoreAt36 = rec.allScores().get(36);
+        assertEquals(70.0, scoreAt36, 0.0001); // -30dBm -> strength 70, weight 1.0
+        assertEquals(scoreAt36, rec.allScores().get(40), 0.0001);
+        assertEquals(scoreAt36, rec.allScores().get(44), 0.0001);
+        assertEquals(scoreAt36, rec.allScores().get(48), 0.0001);
+        // A channel well outside the 80MHz footprint gets no score from this AP at all.
+        assertEquals(0.0, rec.allScores().get(149));
+    }
+
+    @Test
+    void wideChannelApStillScoresFullWeightAtItsOwnReportedChannel() {
+        // Regression guard for ChannelCongestionRule, which reads rec.allScores().get(ap.channel())
+        // assuming an AP always contributes its full strength-based score at its own reported
+        // channel. Before the fix above, a lone strong VHT80 AP scored only 17.5 there (weight
+        // 0.25), falling below AppConfig's default channelCongestionThreshold of 50.0 and silently
+        // no longer firing a WARNING that the exact same physical AP/RSSI used to trigger.
+        ApSnapshot wideAp = wideAp(36, "5GHz", -30, 80, 42);
+        ChannelPlanner.Recommendation rec = ChannelPlanner.recommend(List.of(wideAp), "5GHz");
+        assertTrue(rec.allScores().get(wideAp.channel()) >= 50.0);
     }
 
     @Test
