@@ -19,22 +19,22 @@ class IdwInterpolatorTest {
     @Test
     void exactMatchAtSamplePointReturnsItsValue() {
         List<SurveyPoint> points = List.of(point(0.2, 0.2, -40), point(0.8, 0.8, -80));
-        Double value = IdwInterpolator.interpolate(0.2, 0.2, points, "AA:AA:AA:AA:AA:AA");
+        Double value = IdwInterpolator.INSTANCE.interpolate(0.2, 0.2, points, "AA:AA:AA:AA:AA:AA");
         assertEquals(-40.0, value);
     }
 
     @Test
     void midpointBetweenEqualDistanceSamplesAveragesThem() {
         List<SurveyPoint> points = List.of(point(0.0, 0.5, -40), point(1.0, 0.5, -60));
-        Double value = IdwInterpolator.interpolate(0.5, 0.5, points, "AA:AA:AA:AA:AA:AA");
+        Double value = IdwInterpolator.INSTANCE.interpolate(0.5, 0.5, points, "AA:AA:AA:AA:AA:AA");
         assertEquals(-50.0, value, 0.001);
     }
 
     @Test
     void closerSampleDominatesTheEstimate() {
         List<SurveyPoint> points = List.of(point(0.0, 0.5, -30), point(1.0, 0.5, -90));
-        Double nearFirst = IdwInterpolator.interpolate(0.1, 0.5, points, "AA:AA:AA:AA:AA:AA");
-        Double nearSecond = IdwInterpolator.interpolate(0.9, 0.5, points, "AA:AA:AA:AA:AA:AA");
+        Double nearFirst = IdwInterpolator.INSTANCE.interpolate(0.1, 0.5, points, "AA:AA:AA:AA:AA:AA");
+        Double nearSecond = IdwInterpolator.INSTANCE.interpolate(0.9, 0.5, points, "AA:AA:AA:AA:AA:AA");
         assertEquals(true, nearFirst > -60);
         assertEquals(true, nearSecond < -60);
     }
@@ -42,11 +42,11 @@ class IdwInterpolatorTest {
     @Test
     void unknownTargetReturnsNull() {
         List<SurveyPoint> points = List.of(point(0.2, 0.2, -40));
-        assertNull(IdwInterpolator.interpolate(0.5, 0.5, points, "FF:FF:FF:FF:FF:FF"));
+        assertNull(IdwInterpolator.INSTANCE.interpolate(0.5, 0.5, points, "FF:FF:FF:FF:FF:FF"));
     }
 
     @Test
     void noPointsReturnsNull() {
-        assertNull(IdwInterpolator.interpolate(0.5, 0.5, List.of(), "AA:AA:AA:AA:AA:AA"));
+        assertNull(IdwInterpolator.INSTANCE.interpolate(0.5, 0.5, List.of(), "AA:AA:AA:AA:AA:AA"));
     }
 }

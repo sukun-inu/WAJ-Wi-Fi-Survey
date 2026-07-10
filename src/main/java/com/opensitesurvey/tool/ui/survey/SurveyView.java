@@ -6,6 +6,7 @@ import com.opensitesurvey.tool.model.ScanSnapshot;
 import com.opensitesurvey.tool.model.SurveyPoint;
 import com.opensitesurvey.tool.model.SurveyProject;
 import com.opensitesurvey.tool.persistence.CsvExporter;
+import com.opensitesurvey.tool.persistence.GeoPackageExporter;
 import com.opensitesurvey.tool.persistence.JsonExporter;
 import com.opensitesurvey.tool.persistence.SurveyProjectStore;
 import com.opensitesurvey.tool.ping.PingProbe;
@@ -48,8 +49,10 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
@@ -66,6 +69,9 @@ public final class SurveyView {
     private final Canvas canvas = new Canvas(900, 600);
     private final StackPane canvasHolder = new StackPane(canvas);
     private final ComboBox<String> targetSelector = new ComboBox<>();
+    private static final String ALGO_IDW = "IDW";
+    private static final String ALGO_KRIGING = "Kriging";
+    private final ComboBox<String> algorithmSelector = new ComboBox<>();
     private final ToggleButton surveyModeToggle = new ToggleButton(Messages.get("survey.toggle.measureModeOff"));
     private final Label statusLabel = new Label(Messages.get("survey.status.loadFloorPlanPrompt"));
 
@@ -101,6 +107,11 @@ public final class SurveyView {
     private final CheckBox coverageHoleToggle = new CheckBox(Messages.get("survey.toggle.coverageHoles"));
     private final TextField coverageThresholdField = new TextField("-75");
     private final Label coverageSummaryLabel = new Label("");
+
+    // Heuristic estimated-AP-position markers (see ApPositionEstimator) - drawn for every BSSID
+    // seen so far, not just the current heatmap target, since this is meant as an overview of
+    // where every detected AP likely sits rather than a per-target detail view.
+    private final CheckBox estimatedApPositionsToggle = new CheckBox(Messages.get("survey.toggle.estimatedApPositions"));
 
     // Before/after comparison: a second project's points, loaded independently of the current
     // floor plan/points, used only as a baseline for a delta heatmap (see HeatmapRenderer.renderDelta).
@@ -165,6 +176,11 @@ public final class SurveyView {
         });
         TooltipSupport.set(targetSelector, Messages.get("tooltip.survey.targetSelector"));
 
+        algorithmSelector.getItems().setAll(ALGO_IDW, ALGO_KRIGING);
+        algorithmSelector.getSelectionModel().select(ALGO_IDW);
+        algorithmSelector.setOnAction(e -> redraw());
+        TooltipSupport.set(algorithmSelector, Messages.get("tooltip.survey.algorithmSelector"));
+
         surveyModeToggle.setOnAction(e -> surveyModeToggle.setText(
                 surveyModeToggle.isSelected()
                         ? Messages.get("survey.toggle.measureModeOn") : Messages.get("survey.toggle.measureModeOff")));
@@ -188,6 +204,9 @@ public final class SurveyView {
         Button exportJsonButton = new Button(Messages.get("survey.button.exportPointsJson"));
         exportJsonButton.setOnAction(e -> exportPoints(false));
         TooltipSupport.set(exportJsonButton, Messages.get("tooltip.survey.exportPointsJson"));
+        Button exportGeoPackageButton = new Button(Messages.get("survey.button.exportGeoPackage"));
+        exportGeoPackageButton.setOnAction(e -> exportGeoPackage());
+        TooltipSupport.set(exportGeoPackageButton, Messages.get("tooltip.survey.exportGeoPackage"));
 
         pingHostField.setPromptText(Messages.get("survey.pingHost.prompt"));
         pingHostField.setPrefWidth(130);
@@ -210,6 +229,9 @@ public final class SurveyView {
             }
         });
         TooltipSupport.set(coverageThresholdField, Messages.get("tooltip.survey.coverageThreshold"));
+
+        estimatedApPositionsToggle.setOnAction(e -> redraw());
+        TooltipSupport.set(estimatedApPositionsToggle, Messages.get("tooltip.survey.estimatedApPositions"));
 
         Button loadComparisonButton = new Button(Messages.get("survey.button.loadComparison"));
         loadComparisonButton.setOnAction(e -> onLoadComparison());
@@ -237,13 +259,14 @@ public final class SurveyView {
         TooltipSupport.set(comparisonModeToggle, Messages.get("tooltip.survey.comparisonToggle"));
 
         HBox toolbarRow1 = new HBox(8, loadFloorPlanButton, new Label(Messages.get("survey.label.targetAp")), targetSelector,
+                new Label(Messages.get("survey.label.algorithm")), algorithmSelector,
                 surveyModeToggle, new Label(Messages.get("survey.label.ping")), pingHostField,
-                clearButton, saveButton, loadButton, exportCsvButton, exportJsonButton,
+                clearButton, saveButton, loadButton, exportCsvButton, exportJsonButton, exportGeoPackageButton,
                 reportHtmlButton, reportPdfButton);
         toolbarRow1.setAlignment(Pos.CENTER_LEFT);
 
         HBox toolbarRow2 = new HBox(8, coverageHoleToggle, new Label(Messages.get("survey.label.coverageThreshold")),
-                coverageThresholdField, loadComparisonButton, comparisonModeToggle);
+                coverageThresholdField, estimatedApPositionsToggle, loadComparisonButton, comparisonModeToggle);
         toolbarRow2.setAlignment(Pos.CENTER_LEFT);
 
         VBox toolbar = new VBox(4, toolbarRow1, toolbarRow2);
@@ -587,6 +610,37 @@ public final class SurveyView {
         }
     }
 
+    /**
+     * Exports both the raw survey points and (as a second feature layer, if any BSSID has enough
+     * data) {@link ApPositionEstimator} estimates as a GeoPackage - see {@link GeoPackageExporter}
+     * for why coordinates come out normalized rather than geo-referenced.
+     */
+    private void exportGeoPackage() {
+        if (points.isEmpty()) {
+            showAlert(Messages.get("survey.alert.noPointsToExport"));
+            return;
+        }
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle(Messages.get("survey.chooser.exportGeoPackage"));
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("GeoPackage", "*.gpkg"));
+        File file = chooser.showSaveDialog(currentStage());
+        if (file == null) {
+            return;
+        }
+        List<GeoPackageExporter.ApPositionRow> apPositions = new ArrayList<>();
+        for (ApEstimateInfo info : computeApPositionEstimates()) {
+            apPositions.add(new GeoPackageExporter.ApPositionRow(
+                    info.bssid(), info.ssid(), info.estimate().sampleCount(),
+                    info.estimate().xNorm(), info.estimate().yNorm()));
+        }
+        try {
+            GeoPackageExporter.exportSurveyPoints(points, apPositions, file);
+            statusLabel.setText(Messages.get("survey.status.pointsExported", file.getName()));
+        } catch (Exception e) {
+            showAlert(Messages.get("common.export.failed", e.getMessage()));
+        }
+    }
+
     private void exportReport(boolean html) {
         FileChooser chooser = new FileChooser();
         chooser.setTitle(Messages.get("survey.chooser.exportReport"));
@@ -612,6 +666,11 @@ public final class SurveyView {
         }
     }
 
+    private Interpolator currentInterpolator() {
+        return ALGO_KRIGING.equals(algorithmSelector.getSelectionModel().getSelectedItem())
+                ? KrigingInterpolator.INSTANCE : IdwInterpolator.INSTANCE;
+    }
+
     private void redraw() {
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
@@ -625,19 +684,21 @@ public final class SurveyView {
         String target = targetSelector.getSelectionModel().getSelectedItem();
         String targetBssid = (target == null || target.isEmpty()) ? null : target;
         boolean comparing = comparisonModeToggle.isSelected() && comparisonPoints != null;
+        Interpolator interpolator = currentInterpolator();
 
         // Computed at most once per redraw() and shared with drawCoverageHoles() below - both the
         // heatmap image and the coverage-hole overlay must read the exact same interpolated values
         // for the hatching to never visually disagree with the colors it's drawn on top of (and
-        // recomputing IDW a second time for the same points/target would otherwise be wasted work).
+        // recomputing the interpolation a second time for the same points/target would otherwise
+        // be wasted work).
         Double[][] currentValueGrid = null;
 
         if (!points.isEmpty()) {
             javafx.scene.image.WritableImage heatmap;
             if (comparing) {
-                heatmap = HeatmapRenderer.renderDelta(points, comparisonPoints, targetBssid);
+                heatmap = HeatmapRenderer.renderDelta(points, comparisonPoints, targetBssid, interpolator);
             } else {
-                currentValueGrid = HeatmapRenderer.computeValueGrid(points, targetBssid);
+                currentValueGrid = HeatmapRenderer.computeValueGrid(points, targetBssid, interpolator);
                 heatmap = HeatmapRenderer.colorize(currentValueGrid);
             }
             gc.setImageSmoothing(true);
@@ -650,13 +711,13 @@ public final class SurveyView {
                 // Comparison mode was showing the delta heatmap above, which doesn't compute the
                 // plain absolute-value grid coverage holes need (holes are always about the
                 // *current* survey's own absolute coverage, regardless of comparison mode).
-                currentValueGrid = HeatmapRenderer.computeValueGrid(points, targetBssid);
+                currentValueGrid = HeatmapRenderer.computeValueGrid(points, targetBssid, interpolator);
             }
             drawCoverageHoles(gc, currentValueGrid);
         } else {
             coverageSummaryLabel.setText("");
         }
-        updateComparisonSummary(targetBssid, comparing);
+        updateComparisonSummary(targetBssid, comparing, interpolator);
 
         for (SurveyPoint p : points) {
             double px = p.xNorm * canvas.getWidth();
@@ -670,6 +731,62 @@ public final class SurveyView {
             gc.setStroke(Color.BLACK);
             gc.fillOval(px - 4, py - 4, 8, 8);
             gc.strokeOval(px - 4, py - 4, 8, 8);
+        }
+
+        if (estimatedApPositionsToggle.isSelected() && !points.isEmpty()) {
+            drawEstimatedApPositions(gc);
+        }
+    }
+
+    /** One BSSID's {@link ApPositionEstimator} estimate, paired with its best-effort SSID label. */
+    private record ApEstimateInfo(String bssid, String ssid, ApPositionEstimator.Estimate estimate) {
+    }
+
+    /**
+     * Computes {@link ApPositionEstimator} estimates for every known BSSID - scanning {@code
+     * points} directly for the full set of BSSIDs, not {@link #ssidByBssid}, so this also works
+     * for a loaded historical project (surveyed on a different machine/session) and not just
+     * BSSIDs the live scanner has itself seen. Shared by the on-canvas marker drawing and the
+     * GeoPackage export, so both agree on exactly the same set of estimates.
+     */
+    private List<ApEstimateInfo> computeApPositionEstimates() {
+        Set<String> allBssids = new LinkedHashSet<>();
+        for (SurveyPoint p : points) {
+            allBssids.addAll(p.rssiByBssid.keySet());
+        }
+        List<ApEstimateInfo> result = new ArrayList<>();
+        for (String bssid : allBssids) {
+            ApPositionEstimator.Estimate estimate = ApPositionEstimator.estimate(points, bssid);
+            if (estimate != null) {
+                result.add(new ApEstimateInfo(bssid, ssidByBssid.get(bssid), estimate));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Draws a diamond marker (distinct from the round survey-point markers above) at each
+     * estimate's position, labeled with its SSID (or the BSSID itself if no SSID was ever recorded
+     * for it - see {@link #computeApPositionEstimates()}).
+     */
+    private void drawEstimatedApPositions(GraphicsContext gc) {
+        Color markerColor = Color.web("#ff9f1c");
+        for (ApEstimateInfo info : computeApPositionEstimates()) {
+            double px = info.estimate().xNorm() * canvas.getWidth();
+            double py = info.estimate().yNorm() * canvas.getHeight();
+            double[] xs = {px, px + 7, px, px - 7};
+            double[] ys = {py - 8, py, py + 8, py};
+            gc.setFill(Color.web("#1e2228"));
+            gc.fillOval(px - 9, py - 9, 18, 18);
+            gc.setFill(markerColor);
+            gc.fillPolygon(xs, ys, 4);
+            gc.setStroke(Color.BLACK);
+            gc.setLineWidth(1);
+            gc.strokePolygon(xs, ys, 4);
+
+            String label = info.ssid() == null ? info.bssid() : (info.ssid().isEmpty() ? "<hidden>" : info.ssid());
+            gc.setFill(markerColor);
+            gc.fillText(label + " (" + info.estimate().sampleCount() + ")", px + 10, py + 4);
         }
     }
 
@@ -722,7 +839,7 @@ public final class SurveyView {
     }
 
     /** Updates {@link #comparisonSummaryLabel} with avg/best/worst RSSI delta at each current point vs. the loaded baseline. */
-    private void updateComparisonSummary(String targetBssid, boolean comparing) {
+    private void updateComparisonSummary(String targetBssid, boolean comparing, Interpolator interpolator) {
         if (!comparing) {
             comparisonSummaryLabel.setText("");
             return;
@@ -733,7 +850,7 @@ public final class SurveyView {
         double worst = Double.POSITIVE_INFINITY;
         for (SurveyPoint p : points) {
             Integer current = p.rssiFor(targetBssid);
-            Double baseline = IdwInterpolator.interpolate(p.xNorm, p.yNorm, comparisonPoints, targetBssid);
+            Double baseline = interpolator.interpolate(p.xNorm, p.yNorm, comparisonPoints, targetBssid);
             if (current == null || baseline == null) {
                 continue;
             }

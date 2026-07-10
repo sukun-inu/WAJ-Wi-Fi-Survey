@@ -5,7 +5,9 @@ import com.opensitesurvey.tool.model.SurveyPoint;
 import java.util.List;
 
 /** Inverse Distance Weighting interpolation over survey points, in normalized (0..1) coordinates. */
-public final class IdwInterpolator {
+public final class IdwInterpolator implements Interpolator {
+
+    public static final IdwInterpolator INSTANCE = new IdwInterpolator();
 
     private static final double POWER = 2.0;
     private static final double EPSILON = 1e-9;
@@ -14,7 +16,8 @@ public final class IdwInterpolator {
     }
 
     /** @return the interpolated dBm value at (x, y), or {@code null} if no point carries a value for this target. */
-    public static Double interpolate(double x, double y, List<SurveyPoint> points, String targetBssid) {
+    @Override
+    public Double interpolate(double x, double y, List<SurveyPoint> points, String targetBssid) {
         double weightedSum = 0;
         double weightSum = 0;
         boolean any = false;

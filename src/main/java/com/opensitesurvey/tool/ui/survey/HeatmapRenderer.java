@@ -9,9 +9,9 @@ import javafx.scene.paint.Color;
 import java.util.List;
 
 /**
- * Renders an IDW-interpolated RSSI heatmap into a small (coarse-grid) {@link WritableImage}.
- * The caller upscales it with smoothing onto the floor-plan canvas rather than recomputing IDW
- * per screen pixel every frame.
+ * Renders an interpolated RSSI heatmap into a small (coarse-grid) {@link WritableImage}.
+ * The caller upscales it with smoothing onto the floor-plan canvas rather than recomputing the
+ * interpolation per screen pixel every frame.
  */
 public final class HeatmapRenderer {
 
@@ -21,25 +21,25 @@ public final class HeatmapRenderer {
     private HeatmapRenderer() {
     }
 
-    public static WritableImage render(List<SurveyPoint> points, String targetBssid) {
-        return colorize(computeValueGrid(points, targetBssid));
+    public static WritableImage render(List<SurveyPoint> points, String targetBssid, Interpolator interpolator) {
+        return colorize(computeValueGrid(points, targetBssid, interpolator));
     }
 
     /**
-     * IDW-interpolates {@code targetBssid}'s RSSI at every heatmap-grid cell, returning the raw
+     * Interpolates {@code targetBssid}'s RSSI at every heatmap-grid cell, returning the raw
      * values (row-major, {@code [gy][gx]}, {@code null} where no point carries data for this
      * target). Exposed separately from {@link #render} so a caller that needs both the colored
      * heatmap image AND a per-cell value check (e.g. a coverage-hole overlay) can compute the grid
-     * once and reuse it for both, rather than each independently re-running IDW - which would
-     * otherwise risk the two disagreeing if they ever sampled at different resolutions.
+     * once and reuse it for both, rather than each independently re-running the interpolation -
+     * which would otherwise risk the two disagreeing if they ever sampled at different resolutions.
      */
-    public static Double[][] computeValueGrid(List<SurveyPoint> points, String targetBssid) {
+    public static Double[][] computeValueGrid(List<SurveyPoint> points, String targetBssid, Interpolator interpolator) {
         Double[][] grid = new Double[GRID_HEIGHT][GRID_WIDTH];
         for (int gy = 0; gy < GRID_HEIGHT; gy++) {
             double y = (gy + 0.5) / GRID_HEIGHT;
             for (int gx = 0; gx < GRID_WIDTH; gx++) {
                 double x = (gx + 0.5) / GRID_WIDTH;
-                grid[gy][gx] = IdwInterpolator.interpolate(x, y, points, targetBssid);
+                grid[gy][gx] = interpolator.interpolate(x, y, points, targetBssid);
             }
         }
         return grid;
@@ -68,22 +68,22 @@ public final class HeatmapRenderer {
     private static final double DELTA_SCALE_DBM = 20.0;
 
     /**
-     * Before/after coverage comparison: at every grid cell, IDW-interpolates {@code targetBssid}'s
+     * Before/after coverage comparison: at every grid cell, interpolates {@code targetBssid}'s
      * RSSI independently from each point set and colors the cell by the difference (current -
      * baseline) rather than by absolute signal strength - green where coverage improved, red where
      * it regressed, gray near zero. A cell renders transparent unless <em>both</em> surveys have
      * data there, since a delta is meaningless with only one side present.
      */
     public static WritableImage renderDelta(List<SurveyPoint> currentPoints, List<SurveyPoint> baselinePoints,
-                                             String targetBssid) {
+                                             String targetBssid, Interpolator interpolator) {
         WritableImage image = new WritableImage(GRID_WIDTH, GRID_HEIGHT);
         PixelWriter writer = image.getPixelWriter();
         for (int gy = 0; gy < GRID_HEIGHT; gy++) {
             double y = (gy + 0.5) / GRID_HEIGHT;
             for (int gx = 0; gx < GRID_WIDTH; gx++) {
                 double x = (gx + 0.5) / GRID_WIDTH;
-                Double current = IdwInterpolator.interpolate(x, y, currentPoints, targetBssid);
-                Double baseline = IdwInterpolator.interpolate(x, y, baselinePoints, targetBssid);
+                Double current = interpolator.interpolate(x, y, currentPoints, targetBssid);
+                Double baseline = interpolator.interpolate(x, y, baselinePoints, targetBssid);
                 Color color = (current == null || baseline == null)
                         ? Color.TRANSPARENT
                         : deltaColor(current - baseline).deriveColor(0, 1, 1, 0.55);
