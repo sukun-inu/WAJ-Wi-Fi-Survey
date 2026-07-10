@@ -1,12 +1,12 @@
-package com.waj.tool.channel;
+package com.opensitesurvey.tool.channel;
 
-import com.waj.tool.i18n.Messages;
-import com.waj.tool.model.ApSnapshot;
-import com.waj.tool.model.ScanSnapshot;
-import com.waj.tool.ui.dashboard.AnnotatedAreaChart;
-import com.waj.tool.util.CategoricalColorPalette;
-import com.waj.tool.util.ChannelUtil;
-import com.waj.tool.util.TooltipSupport;
+import com.opensitesurvey.tool.i18n.Messages;
+import com.opensitesurvey.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.ScanSnapshot;
+import com.opensitesurvey.tool.ui.dashboard.AnnotatedAreaChart;
+import com.opensitesurvey.tool.util.CategoricalColorPalette;
+import com.opensitesurvey.tool.util.ChannelUtil;
+import com.opensitesurvey.tool.util.TooltipSupport;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

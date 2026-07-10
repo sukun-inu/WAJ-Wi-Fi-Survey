@@ -1,4 +1,4 @@
-package com.waj.tool.persistence;
+package com.opensitesurvey.tool.persistence;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

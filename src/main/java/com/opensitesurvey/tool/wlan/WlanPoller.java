@@ -1,7 +1,7 @@
-package com.waj.tool.wlan;
+package com.opensitesurvey.tool.wlan;
 
-import com.waj.tool.model.ApSnapshot;
-import com.waj.tool.model.ScanSnapshot;
+import com.opensitesurvey.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.ScanSnapshot;
 
 import java.time.Instant;
 import java.util.List;

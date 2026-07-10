@@ -1,4 +1,4 @@
-package com.waj.tool.ping;
+package com.opensitesurvey.tool.ping;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

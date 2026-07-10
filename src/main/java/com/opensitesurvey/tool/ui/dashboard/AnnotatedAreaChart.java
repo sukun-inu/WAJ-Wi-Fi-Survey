@@ -1,4 +1,4 @@
-package com.waj.tool.ui.dashboard;
+package com.opensitesurvey.tool.ui.dashboard;
 
 import javafx.scene.Node;
 import javafx.scene.chart.AreaChart;

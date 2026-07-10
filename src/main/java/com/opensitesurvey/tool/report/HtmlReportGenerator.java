@@ -1,10 +1,10 @@
-package com.waj.tool.report;
+package com.opensitesurvey.tool.report;
 
-import com.waj.tool.channel.ChannelPlanner;
-import com.waj.tool.i18n.Messages;
-import com.waj.tool.model.ApSnapshot;
-import com.waj.tool.model.SurveyPoint;
-import com.waj.tool.security.SecurityType;
+import com.opensitesurvey.tool.channel.ChannelPlanner;
+import com.opensitesurvey.tool.i18n.Messages;
+import com.opensitesurvey.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.SurveyPoint;
+import com.opensitesurvey.tool.security.SecurityType;
 import javafx.embed.swing.SwingFXUtils;
 
 import javax.imageio.ImageIO;

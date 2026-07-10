@@ -1,4 +1,4 @@
-package com.waj.tool.util;
+package com.opensitesurvey.tool.util;
 
 /** Shared RFC 4180-style CSV field escaping, used by every CSV exporter in the app. */
 public final class CsvUtil {

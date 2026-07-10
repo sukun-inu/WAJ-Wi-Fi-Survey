@@ -1,4 +1,4 @@
-package com.waj.tool.util;
+package com.opensitesurvey.tool.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;

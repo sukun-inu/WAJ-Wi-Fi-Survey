@@ -1,14 +1,14 @@
-package com.waj.tool.security;
+package com.opensitesurvey.tool.security;
 
-import com.waj.tool.alert.TrustedApRegistry;
-import com.waj.tool.i18n.Messages;
-import com.waj.tool.model.ApSnapshot;
-import com.waj.tool.model.ScanSnapshot;
-import com.waj.tool.util.CategoricalColorPalette;
-import com.waj.tool.util.MonoTableCells;
-import com.waj.tool.util.RiskColors;
-import com.waj.tool.util.TooltipSupport;
-import com.waj.tool.util.VendorLookup;
+import com.opensitesurvey.tool.alert.TrustedApRegistry;
+import com.opensitesurvey.tool.i18n.Messages;
+import com.opensitesurvey.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.ScanSnapshot;
+import com.opensitesurvey.tool.util.CategoricalColorPalette;
+import com.opensitesurvey.tool.util.MonoTableCells;
+import com.opensitesurvey.tool.util.RiskColors;
+import com.opensitesurvey.tool.util.TooltipSupport;
+import com.opensitesurvey.tool.util.VendorLookup;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

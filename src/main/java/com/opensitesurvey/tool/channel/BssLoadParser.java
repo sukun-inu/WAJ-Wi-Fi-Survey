@@ -1,4 +1,4 @@
-package com.waj.tool.channel;
+package com.opensitesurvey.tool.channel;
 
 /**
  * Parses the optional 802.11 BSS Load information element (tag 11) out of a beacon/probe

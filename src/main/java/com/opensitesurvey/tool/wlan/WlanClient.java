@@ -1,4 +1,4 @@
-package com.waj.tool.wlan;
+package com.opensitesurvey.tool.wlan;
 
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.Guid.GUID;
@@ -6,8 +6,8 @@ import com.sun.jna.platform.win32.WinNT.HANDLE;
 import com.sun.jna.platform.win32.WinNT.HANDLEByReference;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
-import com.waj.tool.i18n.Messages;
-import com.waj.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.i18n.Messages;
+import com.opensitesurvey.tool.model.ApSnapshot;
 
 import java.time.Instant;
 import java.util.ArrayList;

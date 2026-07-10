@@ -1,10 +1,10 @@
-package com.waj.tool.alert;
+package com.opensitesurvey.tool.alert;
 
-import com.waj.tool.i18n.Messages;
-import com.waj.tool.persistence.AppConfig;
-import com.waj.tool.persistence.AppConfigStore;
-import com.waj.tool.util.AppTheme;
-import com.waj.tool.util.TooltipSupport;
+import com.opensitesurvey.tool.i18n.Messages;
+import com.opensitesurvey.tool.persistence.AppConfig;
+import com.opensitesurvey.tool.persistence.AppConfigStore;
+import com.opensitesurvey.tool.util.AppTheme;
+import com.opensitesurvey.tool.util.TooltipSupport;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;

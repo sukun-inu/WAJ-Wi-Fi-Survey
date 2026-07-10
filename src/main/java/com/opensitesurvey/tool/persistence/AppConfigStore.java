@@ -1,8 +1,8 @@
-package com.waj.tool.persistence;
+package com.opensitesurvey.tool.persistence;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.waj.tool.i18n.Messages;
+import com.opensitesurvey.tool.i18n.Messages;
 
 import java.io.File;
 import java.io.IOException;

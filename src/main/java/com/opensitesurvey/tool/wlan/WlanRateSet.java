@@ -1,4 +1,4 @@
-package com.waj.tool.wlan;
+package com.opensitesurvey.tool.wlan;
 
 import com.sun.jna.Structure;
 

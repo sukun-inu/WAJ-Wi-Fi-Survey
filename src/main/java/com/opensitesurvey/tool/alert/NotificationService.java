@@ -1,12 +1,11 @@
-package com.waj.tool.alert;
+package com.opensitesurvey.tool.alert;
 
 import java.awt.AWTException;
-import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.SystemTray;
+import java.awt.Toolkit;
 import java.awt.TrayIcon;
-import java.awt.image.BufferedImage;
+import java.net.URL;
 
 /**
  * Windows notifications via {@code java.awt.SystemTray} - JDK-standard, no extra native
@@ -25,7 +24,7 @@ public final class NotificationService {
             return;
         }
         try {
-            trayIcon = new TrayIcon(createIconImage(), "WAJ Wi-Fi Survey");
+            trayIcon = new TrayIcon(createIconImage(), "OpenSiteSurvey");
             trayIcon.setImageAutoSize(true);
             SystemTray.getSystemTray().add(trayIcon);
             available = true;
@@ -45,12 +44,7 @@ public final class NotificationService {
     }
 
     private static Image createIconImage() {
-        int size = 16;
-        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = img.createGraphics();
-        g.setColor(new Color(0x2E, 0xCC, 0x71));
-        g.fillOval(0, 0, size, size);
-        g.dispose();
-        return img;
+        URL iconUrl = NotificationService.class.getResource("/icons/app-16.png");
+        return Toolkit.getDefaultToolkit().createImage(iconUrl);
     }
 }

@@ -1,4 +1,4 @@
-package com.waj.tool.channel;
+package com.opensitesurvey.tool.channel;
 
 import org.junit.jupiter.api.Test;
 

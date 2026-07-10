@@ -1,4 +1,4 @@
-package com.waj.tool.security;
+package com.opensitesurvey.tool.security;
 
 /**
  * Classifies an AP's security as Open/WEP/WPA/WPA2/WPA3 by parsing the raw 802.11 information

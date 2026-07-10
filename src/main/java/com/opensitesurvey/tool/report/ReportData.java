@@ -1,7 +1,7 @@
-package com.waj.tool.report;
+package com.opensitesurvey.tool.report;
 
-import com.waj.tool.model.ApSnapshot;
-import com.waj.tool.model.SurveyPoint;
+import com.opensitesurvey.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.SurveyPoint;
 import javafx.scene.image.Image;
 
 import java.time.Instant;

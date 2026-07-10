@@ -1,4 +1,4 @@
-package com.waj.tool;
+package com.opensitesurvey.tool;
 
 /**
  * Plain (non-Application) entry point used by the fat jar / jpackage image.

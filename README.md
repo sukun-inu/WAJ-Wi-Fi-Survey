@@ -1,6 +1,6 @@
-# WAJ Wi-Fi Survey
+# OpenSiteSurvey
 
-TamoGraph Site Survey の考え方に着想を得た、Java (JavaFX) 製の Wi-Fi サイトサーベイ/監視ツールです。
+Java (JavaFX) 製の Wi-Fi サイトサーベイ/監視ツールです。
 Windows の Native Wifi API (`Wlanapi.dll`) を JNA で直接叩き、実機の Wi-Fi アダプタ (例: Intel(R) Wi-Fi 6 AX201) から
 SSID / BSSID / チャネル / RSSI / リンク品質 / PHY種別 / セキュリティ種別をリアルタイムに取得します。
 インフラエンジニアの日常業務(サイト調査・障害後検証・チャネル設計・セキュリティ監査・継続監視)を想定したフル装備版です。
@@ -21,7 +21,7 @@ UIは日本語/英語(設定画面から切り替え、再起動後に反映)に
 
 ## 設定・保存仕様
 
-アプリ初回起動時に `~/.waj-wifi-survey/` 配下へ以下を作成します。
+アプリ初回起動時に `~/.opensitesurvey/` 配下へ以下を作成します。
 
 - `settings.json`: 永続設定
 - `scan-log.db`: 長期スキャンログ(SQLite)
@@ -74,12 +74,12 @@ UIは日本語/英語(設定画面から切り替え、再起動後に反映)に
 パッケージ済みjar/exeに `--headless` を渡すと、GUIなしでスキャンループのみを実行します(Ctrl+Cで停止)。
 
 ```
-java -jar target\waj-wifi-survey-<version>-shaded.jar --headless
-java -jar target\waj-wifi-survey-<version>-shaded.jar --headless --interval 5000
+java -jar target\open-site-survey-<version>-shaded.jar --headless
+java -jar target\open-site-survey-<version>-shaded.jar --headless --interval 5000
 ```
 
 - `--interval <ms>`: ポーリング間隔(既定2000ms)。
-- 通常のGUI版と同じ `~/.waj-wifi-survey/scan-log.db` に書き込むため、ヘッドレス機で収集したログをGUI版のHistoryタブから閲覧できます。
+- 通常のGUI版と同じ `~/.opensitesurvey/scan-log.db` に書き込むため、ヘッドレス機で収集したログをGUI版のHistoryタブから閲覧できます。
 - 検出APの一覧をコンソールへ1スキャンごとに出力します。
 
 ## テスト
@@ -97,7 +97,7 @@ java -jar target\waj-wifi-survey-<version>-shaded.jar --headless --interval 5000
 ```
 
 - Maven本ビルド(テスト込み)→ 依存込みfat jar化(`maven-shade-plugin`)→ `jpackage --type app-image` の順で実行します。
-- 生成物: `dist/<version>/WAJ WiFi Survey/WAJ WiFi Survey.exe`(Java実行環境同梱、そのまま配布可能)、および同ディレクトリに配布用zipも作成されます。
+- 生成物: `dist/<version>/OpenSiteSurvey/OpenSiteSurvey.exe`(Java実行環境同梱、そのまま配布可能)、および同ディレクトリに配布用zipも作成されます。
 - `dist/` はバージョンごとにサブディレクトリを分けるビルド専用の配布物置き場です(gitでは追跡しません)。再ビルドすると対象バージョンのフォルダのみ作り直されます。
 - テストをスキップしたい場合: `.\build-release.ps1 -SkipTests`
 - `.msi` インストーラも生成したい場合: `.\build-release.ps1 -Msi`。jpackageのMSI生成には WiX Toolset (`candle.exe`/`light.exe`) が必要ですが、システムへのインストールは不要です — 初回実行時にWiX v3.11のポータブル版バイナリを自動ダウンロードし、`.tools/wix/` 配下に配置します(JDK/Mavenと同じ「システムにインストールせずプロジェクトローカルに同梱する」方針)。ダウンロードのみネットワーク接続が必要です。
@@ -115,7 +115,7 @@ java -jar target\waj-wifi-survey-<version>-shaded.jar --headless --interval 5000
 ## プロジェクト構成
 
 ```
-com.waj.tool
+com.opensitesurvey.tool
 ├── App.java                 JavaFXエントリポイント + MenuBar
 ├── Launcher.java             fat jar/exe用のプレーンなmainエントリポイント(--headless判定含む)
 ├── HeadlessRunner.java       GUIなしのコンソールスキャンループ(--headless)

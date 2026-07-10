@@ -1,4 +1,4 @@
-package com.waj.tool.util;
+package com.opensitesurvey.tool.util;
 
 /**
  * Wlanapi.dll exposes no noise-floor field ({@code WLAN_BSS_ENTRY} has RSSI and link quality

@@ -1,4 +1,4 @@
-package com.waj.tool.alert;
+package com.opensitesurvey.tool.alert;
 
 public enum AlertSeverity {
     INFO, WARNING, CRITICAL

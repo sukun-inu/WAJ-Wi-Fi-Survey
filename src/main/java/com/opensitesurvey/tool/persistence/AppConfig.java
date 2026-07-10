@@ -1,4 +1,4 @@
-package com.waj.tool.persistence;
+package com.opensitesurvey.tool.persistence;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +37,7 @@ public class AppConfig {
 
     public String defaultPingHost = "";
 
-    /** "ja" or "en" - see {@code com.waj.tool.i18n.Messages}. Takes effect on next app launch. */
+    /** "ja" or "en" - see {@code com.opensitesurvey.tool.i18n.Messages}. Takes effect on next app launch. */
     public String language = "ja";
 
     /** How often a snapshot is written to the long-term SQLite log, independent of the UI poll interval. */

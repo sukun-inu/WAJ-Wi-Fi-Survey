@@ -1,4 +1,4 @@
-package com.waj.tool.alert;
+package com.opensitesurvey.tool.alert;
 
 import java.time.Instant;
 

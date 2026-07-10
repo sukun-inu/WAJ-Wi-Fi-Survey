@@ -1,4 +1,4 @@
-package com.waj.tool.channel;
+package com.opensitesurvey.tool.channel;
 
 /**
  * Parses the optional HT Operation (tag 61) and VHT Operation (tag 192) information elements out

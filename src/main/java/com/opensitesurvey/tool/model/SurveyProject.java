@@ -1,4 +1,4 @@
-package com.waj.tool.model;
+package com.opensitesurvey.tool.model;
 
 import java.util.ArrayList;
 import java.util.List;

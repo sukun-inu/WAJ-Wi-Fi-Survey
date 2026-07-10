@@ -1,7 +1,7 @@
-package com.waj.tool;
+package com.opensitesurvey.tool;
 
-import com.waj.tool.i18n.Messages;
-import com.waj.tool.util.AppTheme;
+import com.opensitesurvey.tool.i18n.Messages;
+import com.opensitesurvey.tool.util.AppTheme;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;

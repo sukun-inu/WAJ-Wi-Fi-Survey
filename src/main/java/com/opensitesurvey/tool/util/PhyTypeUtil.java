@@ -1,4 +1,4 @@
-package com.waj.tool.util;
+package com.opensitesurvey.tool.util;
 
 /** Maps {@code DOT11_PHY_TYPE} enum values (windot11.h) to human-readable Wi-Fi generation labels. */
 public final class PhyTypeUtil {

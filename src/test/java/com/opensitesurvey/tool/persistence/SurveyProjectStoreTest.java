@@ -1,7 +1,7 @@
-package com.waj.tool.persistence;
+package com.opensitesurvey.tool.persistence;
 
-import com.waj.tool.model.SurveyPoint;
-import com.waj.tool.model.SurveyProject;
+import com.opensitesurvey.tool.model.SurveyPoint;
+import com.opensitesurvey.tool.model.SurveyProject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -20,7 +20,7 @@ class SurveyProjectStoreTest {
         SurveyPoint p2 = new SurveyPoint(0.75, 0.1, Map.of("AA:AA:AA:AA:AA:AA", -70, "BB:BB:BB:BB:BB:BB", -55), Instant.ofEpochSecond(1_700_000_100));
         SurveyProject original = new SurveyProject("C:/floorplans/office.png", 0.05, List.of(p1, p2));
 
-        Path file = tempDir.resolve("test.wajproj.json");
+        Path file = tempDir.resolve("test.ossproj.json");
         SurveyProjectStore.save(original, file.toFile());
         SurveyProject loaded = SurveyProjectStore.load(file.toFile());
 

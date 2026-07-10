@@ -1,13 +1,13 @@
-package com.waj.tool.ui.ping;
+package com.opensitesurvey.tool.ui.ping;
 
-import com.waj.tool.i18n.Messages;
-import com.waj.tool.ping.TraceroutePoller;
-import com.waj.tool.ping.TracerouteProbe;
-import com.waj.tool.ui.dashboard.AnnotatedLineChart;
-import com.waj.tool.ui.dashboard.ChartCrosshair;
-import com.waj.tool.util.CategoricalColorPalette;
-import com.waj.tool.util.MonoTableCells;
-import com.waj.tool.util.TooltipSupport;
+import com.opensitesurvey.tool.i18n.Messages;
+import com.opensitesurvey.tool.ping.TraceroutePoller;
+import com.opensitesurvey.tool.ping.TracerouteProbe;
+import com.opensitesurvey.tool.ui.dashboard.AnnotatedLineChart;
+import com.opensitesurvey.tool.ui.dashboard.ChartCrosshair;
+import com.opensitesurvey.tool.util.CategoricalColorPalette;
+import com.opensitesurvey.tool.util.MonoTableCells;
+import com.opensitesurvey.tool.util.TooltipSupport;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;

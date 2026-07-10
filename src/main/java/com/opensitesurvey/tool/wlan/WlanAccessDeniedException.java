@@ -1,4 +1,4 @@
-package com.waj.tool.wlan;
+package com.opensitesurvey.tool.wlan;
 
 /**
  * Thrown when Windows denies a Wi-Fi scan call with {@code ERROR_ACCESS_DENIED}.

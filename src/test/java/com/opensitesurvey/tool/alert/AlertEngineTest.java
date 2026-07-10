@@ -1,9 +1,9 @@
-package com.waj.tool.alert;
+package com.opensitesurvey.tool.alert;
 
-import com.waj.tool.model.ApSnapshot;
-import com.waj.tool.model.ScanSnapshot;
-import com.waj.tool.persistence.AppConfig;
-import com.waj.tool.security.SecurityType;
+import com.opensitesurvey.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.ScanSnapshot;
+import com.opensitesurvey.tool.persistence.AppConfig;
+import com.opensitesurvey.tool.security.SecurityType;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

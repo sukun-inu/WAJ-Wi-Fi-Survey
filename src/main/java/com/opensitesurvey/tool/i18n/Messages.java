@@ -1,4 +1,4 @@
-package com.waj.tool.i18n;
+package com.opensitesurvey.tool.i18n;
 
 import java.io.IOException;
 import java.io.InputStream;

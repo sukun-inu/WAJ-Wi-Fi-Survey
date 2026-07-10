@@ -1,16 +1,16 @@
-package com.waj.tool;
+package com.opensitesurvey.tool;
 
-import com.waj.tool.alert.Alert;
-import com.waj.tool.alert.AlertContext;
-import com.waj.tool.alert.AlertEngine;
-import com.waj.tool.alert.NotificationService;
-import com.waj.tool.model.ApSnapshot;
-import com.waj.tool.model.ScanSnapshot;
-import com.waj.tool.persistence.AppConfig;
-import com.waj.tool.persistence.AppConfigStore;
-import com.waj.tool.persistence.AppPaths;
-import com.waj.tool.persistence.ScanLogDatabase;
-import com.waj.tool.wlan.WlanPoller;
+import com.opensitesurvey.tool.alert.Alert;
+import com.opensitesurvey.tool.alert.AlertContext;
+import com.opensitesurvey.tool.alert.AlertEngine;
+import com.opensitesurvey.tool.alert.NotificationService;
+import com.opensitesurvey.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.ScanSnapshot;
+import com.opensitesurvey.tool.persistence.AppConfig;
+import com.opensitesurvey.tool.persistence.AppConfigStore;
+import com.opensitesurvey.tool.persistence.AppPaths;
+import com.opensitesurvey.tool.persistence.ScanLogDatabase;
+import com.opensitesurvey.tool.wlan.WlanPoller;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -66,7 +66,7 @@ public final class HeadlessRunner {
     }
 
     public static void run(long pollIntervalMillis) {
-        System.out.println("WAJ Wi-Fi Survey - headless scan mode (interval=" + pollIntervalMillis + "ms, Ctrl+C to stop)");
+        System.out.println("OpenSiteSurvey - headless scan mode (interval=" + pollIntervalMillis + "ms, Ctrl+C to stop)");
 
         ScanLogDatabase scanLogDatabase;
         try {

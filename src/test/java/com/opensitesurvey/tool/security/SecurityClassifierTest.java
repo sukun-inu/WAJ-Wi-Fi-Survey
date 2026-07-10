@@ -1,4 +1,4 @@
-package com.waj.tool.security;
+package com.opensitesurvey.tool.security;
 
 import org.junit.jupiter.api.Test;
 

@@ -1,4 +1,4 @@
-package com.waj.tool.util;
+package com.opensitesurvey.tool.util;
 
 /** Frequency (kHz, as reported by Wlanapi.dll) &lt;-&gt; Wi-Fi channel number conversions. */
 public final class ChannelUtil {

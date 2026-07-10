@@ -1,7 +1,7 @@
-package com.waj.tool.ui.survey;
+package com.opensitesurvey.tool.ui.survey;
 
-import com.waj.tool.model.SurveyPoint;
-import com.waj.tool.util.SignalColorScale;
+import com.opensitesurvey.tool.model.SurveyPoint;
+import com.opensitesurvey.tool.util.SignalColorScale;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;

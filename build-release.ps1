@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Builds a distributable, self-contained Windows app image (exe) for WAJ Wi-Fi Survey.
+  Builds a distributable, self-contained Windows app image (exe) for OpenSiteSurvey.
 
 .DESCRIPTION
   1. Runs the full Maven build (mvnw) to produce a fat/shaded jar.
@@ -102,7 +102,8 @@ if (Test-Path $stagingDir) { Remove-Item $stagingDir -Recurse -Force }
 New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
 Copy-Item $shadedJar -Destination $stagingDir
 
-$appName = "WAJ WiFi Survey"
+$appName = "OpenSiteSurvey"
+$iconPath = Join-Path $root "icon\icon.ico"
 $distDir = Join-Path $root "dist\$version"
 if (Test-Path $distDir) { Remove-Item $distDir -Recurse -Force }
 New-Item -ItemType Directory -Path $distDir -Force | Out-Null
@@ -115,10 +116,11 @@ Write-Host "== Running jpackage ==" -ForegroundColor Cyan
     --dest $distDir `
     --name $appName `
     --main-jar (Split-Path $shadedJar -Leaf) `
-    --main-class com.waj.tool.Launcher `
+    --main-class com.opensitesurvey.tool.Launcher `
     --app-version $appVersion `
-    --vendor "WAJ Tool" `
-    --description "TamoGraph-inspired Wi-Fi site survey tool"
+    --vendor "OpenSiteSurvey" `
+    --description "Wi-Fi site survey and monitoring tool" `
+    --icon $iconPath
 if ($LASTEXITCODE -ne 0) { throw "jpackage failed (exit $LASTEXITCODE)" }
 
 $appImageDir = Join-Path $distDir $appName
@@ -156,10 +158,11 @@ if ($Msi) {
         --dest $distDir `
         --name $appName `
         --main-jar (Split-Path $shadedJar -Leaf) `
-        --main-class com.waj.tool.Launcher `
+        --main-class com.opensitesurvey.tool.Launcher `
         --app-version $appVersion `
-        --vendor "WAJ Tool" `
-        --description "TamoGraph-inspired Wi-Fi site survey tool" `
+        --vendor "OpenSiteSurvey" `
+        --description "Wi-Fi site survey and monitoring tool" `
+        --icon $iconPath `
         --win-menu `
         --win-shortcut `
         --win-dir-chooser `

@@ -1,6 +1,6 @@
-package com.waj.tool.alert;
+package com.opensitesurvey.tool.alert;
 
-import com.waj.tool.model.ScanSnapshot;
+import com.opensitesurvey.tool.model.ScanSnapshot;
 
 import java.util.List;
 

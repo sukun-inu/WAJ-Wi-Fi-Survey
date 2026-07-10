@@ -1,4 +1,4 @@
-package com.waj.tool.ui.ping;
+package com.opensitesurvey.tool.ui.ping;
 
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -12,7 +12,7 @@ import java.util.Set;
 
 /**
  * Rolling per-hop RTT history (last {@link #RETENTION_SECONDS}) for the traceroute latency chart.
- * Mirrors {@code com.waj.tool.ui.dashboard.RssiHistoryStore}'s corrected pruning behavior: a hop
+ * Mirrors {@code com.opensitesurvey.tool.ui.dashboard.RssiHistoryStore}'s corrected pruning behavior: a hop
  * that stops responding entirely has its whole entry dropped (not just its old samples), so it
  * can't drag the chart's bounded X axis back to whenever it was last seen.
  */

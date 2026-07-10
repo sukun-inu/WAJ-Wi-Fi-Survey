@@ -1,6 +1,6 @@
-package com.waj.tool.security;
+package com.opensitesurvey.tool.security;
 
-import com.waj.tool.i18n.Messages;
+import com.opensitesurvey.tool.i18n.Messages;
 
 /**
  * Wi-Fi authentication/encryption classification derived from 802.11 information elements. Labels

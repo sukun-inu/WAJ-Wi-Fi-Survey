@@ -1,4 +1,4 @@
-package com.waj.tool.wlan;
+package com.opensitesurvey.tool.wlan;
 
 import org.junit.jupiter.api.Test;
 

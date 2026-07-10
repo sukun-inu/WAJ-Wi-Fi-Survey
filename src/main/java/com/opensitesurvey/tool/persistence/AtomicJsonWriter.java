@@ -1,4 +1,4 @@
-package com.waj.tool.persistence;
+package com.opensitesurvey.tool.persistence;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

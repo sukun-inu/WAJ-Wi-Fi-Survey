@@ -1,7 +1,7 @@
-package com.waj.tool.wlan;
+package com.opensitesurvey.tool.wlan;
 
 import com.sun.jna.platform.win32.Guid.GUID;
-import com.waj.tool.i18n.Messages;
+import com.opensitesurvey.tool.i18n.Messages;
 
 /** A wireless LAN adapter as enumerated by {@code WlanEnumInterfaces}. */
 public record WlanInterface(GUID guid, String description, int stateCode) {

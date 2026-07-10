@@ -1,4 +1,4 @@
-package com.waj.tool.util;
+package com.opensitesurvey.tool.util;
 
 import javafx.scene.paint.Color;
 import org.junit.jupiter.api.Test;

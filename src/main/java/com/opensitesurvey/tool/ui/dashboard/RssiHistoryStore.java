@@ -1,6 +1,6 @@
-package com.waj.tool.ui.dashboard;
+package com.opensitesurvey.tool.ui.dashboard;
 
-import com.waj.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.ApSnapshot;
 
 import java.time.Instant;
 import java.util.ArrayDeque;

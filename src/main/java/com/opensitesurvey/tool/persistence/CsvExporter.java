@@ -1,8 +1,8 @@
-package com.waj.tool.persistence;
+package com.opensitesurvey.tool.persistence;
 
-import com.waj.tool.model.ApSnapshot;
-import com.waj.tool.model.SurveyPoint;
-import com.waj.tool.util.CsvUtil;
+import com.opensitesurvey.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.SurveyPoint;
+import com.opensitesurvey.tool.util.CsvUtil;
 
 import java.io.File;
 import java.io.IOException;

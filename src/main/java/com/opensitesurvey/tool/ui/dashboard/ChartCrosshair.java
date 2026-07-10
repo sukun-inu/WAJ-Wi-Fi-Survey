@@ -1,6 +1,6 @@
-package com.waj.tool.ui.dashboard;
+package com.opensitesurvey.tool.ui.dashboard;
 
-import com.waj.tool.i18n.Messages;
+import com.opensitesurvey.tool.i18n.Messages;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.chart.Chart;
@@ -23,9 +23,8 @@ import java.util.function.Function;
  * Shared vertical crosshair + ranked value-list side panel for XYChart-based views. On mouse
  * move over the chart's plot area, converts the cursor's pixel X to a data-space X value, asks
  * the caller for every series' value at that X ({@code entriesAt}), and lists them - color
- * swatch, label, value - sorted strongest-first in a side panel. Mirrors how TamoGraph's
- * survey-point tooltip ranks every visible AP's dBm reading rather than showing just one
- * selected series.
+ * swatch, label, value - sorted strongest-first in a side panel, ranking every visible AP's
+ * dBm reading rather than showing just one selected series.
  *
  * <p>Mouse handlers are attached to the chart's {@code .chart-plot-background} node rather than
  * the chart itself, since that node's local coordinate space is what {@code Axis.getValueForDisplay}

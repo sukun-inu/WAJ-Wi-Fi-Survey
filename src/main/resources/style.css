@@ -88,7 +88,7 @@
  * Consolas so digits stay fixed-width and easy to visually compare down a column - a TableColumn's
  * own style class doesn't cascade to its TableCell instances (they aren't parent/child in the
  * scene graph), so this is applied per-cell via a custom cellFactory (see
- * com.waj.tool.util.MonoTableCells) rather than just tagging the column.
+ * com.opensitesurvey.tool.util.MonoTableCells) rather than just tagging the column.
  */
 .mono-numeric {
     -fx-font-family: "Consolas", "BIZ UDPゴシック", monospace;

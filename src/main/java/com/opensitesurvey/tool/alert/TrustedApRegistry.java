@@ -1,6 +1,6 @@
-package com.waj.tool.alert;
+package com.opensitesurvey.tool.alert;
 
-import com.waj.tool.persistence.AppConfig;
+import com.opensitesurvey.tool.persistence.AppConfig;
 
 import java.util.ArrayList;
 import java.util.List;

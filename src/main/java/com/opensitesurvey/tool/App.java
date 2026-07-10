@@ -1,26 +1,26 @@
-package com.waj.tool;
+package com.opensitesurvey.tool;
 
-import com.waj.tool.alert.AlertContext;
-import com.waj.tool.alert.AlertEngine;
-import com.waj.tool.alert.AlertsView;
-import com.waj.tool.alert.NotificationService;
-import com.waj.tool.alert.SettingsDialog;
-import com.waj.tool.persistence.AppConfig;
-import com.waj.tool.persistence.AppConfigStore;
-import com.waj.tool.persistence.AppPaths;
-import com.waj.tool.persistence.ScanLogDatabase;
-import com.waj.tool.channel.ChannelPlanningView;
-import com.waj.tool.security.SecurityAuditView;
-import com.waj.tool.ui.dashboard.DashboardView;
-import com.waj.tool.ui.history.HistoryView;
-import com.waj.tool.ui.ping.TracerouteView;
-import com.waj.tool.ui.survey.SurveyView;
-import com.waj.tool.i18n.Messages;
-import com.waj.tool.util.AppTheme;
-import com.waj.tool.util.CategoricalColorPalette;
-import com.waj.tool.util.TooltipSupport;
-import com.waj.tool.wlan.WlanInterface;
-import com.waj.tool.wlan.WlanPoller;
+import com.opensitesurvey.tool.alert.AlertContext;
+import com.opensitesurvey.tool.alert.AlertEngine;
+import com.opensitesurvey.tool.alert.AlertsView;
+import com.opensitesurvey.tool.alert.NotificationService;
+import com.opensitesurvey.tool.alert.SettingsDialog;
+import com.opensitesurvey.tool.persistence.AppConfig;
+import com.opensitesurvey.tool.persistence.AppConfigStore;
+import com.opensitesurvey.tool.persistence.AppPaths;
+import com.opensitesurvey.tool.persistence.ScanLogDatabase;
+import com.opensitesurvey.tool.channel.ChannelPlanningView;
+import com.opensitesurvey.tool.security.SecurityAuditView;
+import com.opensitesurvey.tool.ui.dashboard.DashboardView;
+import com.opensitesurvey.tool.ui.history.HistoryView;
+import com.opensitesurvey.tool.ui.ping.TracerouteView;
+import com.opensitesurvey.tool.ui.survey.SurveyView;
+import com.opensitesurvey.tool.i18n.Messages;
+import com.opensitesurvey.tool.util.AppTheme;
+import com.opensitesurvey.tool.util.CategoricalColorPalette;
+import com.opensitesurvey.tool.util.TooltipSupport;
+import com.opensitesurvey.tool.wlan.WlanInterface;
+import com.opensitesurvey.tool.wlan.WlanPoller;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -40,6 +40,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -175,6 +176,12 @@ public class App extends Application {
         Scene scene = new Scene(root, 1400, 900);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
 
+        primaryStage.getIcons().addAll(
+                new Image(getClass().getResourceAsStream("/icons/app-16.png")),
+                new Image(getClass().getResourceAsStream("/icons/app-32.png")),
+                new Image(getClass().getResourceAsStream("/icons/app-48.png")),
+                new Image(getClass().getResourceAsStream("/icons/app-128.png")),
+                new Image(getClass().getResourceAsStream("/icons/app-256.png")));
         primaryStage.setTitle(Messages.get("app.title"));
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -200,8 +207,8 @@ public class App extends Application {
                     // Alert evaluation is pure in-memory computation - cheap enough to run on
                     // this background thread too, and TrayIcon notifications are safe to fire
                     // from any thread.
-                    java.util.List<com.waj.tool.alert.Alert> firedAlerts = alertEngine.onSnapshot(snapshot);
-                    for (com.waj.tool.alert.Alert fired : firedAlerts) {
+                    java.util.List<com.opensitesurvey.tool.alert.Alert> firedAlerts = alertEngine.onSnapshot(snapshot);
+                    for (com.opensitesurvey.tool.alert.Alert fired : firedAlerts) {
                         notificationService.notify(fired, appConfig.windowsNotificationsEnabled);
                     }
 
@@ -269,7 +276,7 @@ public class App extends Application {
     }
 
     private MenuBar buildMenuBar(Stage primaryStage, AppConfig appConfig,
-                                  com.waj.tool.alert.TrustedApRegistry trustedApRegistry) {
+                                  com.opensitesurvey.tool.alert.TrustedApRegistry trustedApRegistry) {
         Menu fileMenu = new Menu(Messages.get("app.menu.file"));
         MenuItem exitItem = new MenuItem(Messages.get("app.menu.file.exit"));
         exitItem.setOnAction(e -> primaryStage.close());

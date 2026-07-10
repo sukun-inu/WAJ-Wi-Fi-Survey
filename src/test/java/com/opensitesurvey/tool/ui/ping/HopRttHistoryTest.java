@@ -1,4 +1,4 @@
-package com.waj.tool.ui.ping;
+package com.opensitesurvey.tool.ui.ping;
 
 import org.junit.jupiter.api.Test;
 

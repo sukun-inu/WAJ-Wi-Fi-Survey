@@ -1,9 +1,9 @@
-package com.waj.tool.persistence;
+package com.opensitesurvey.tool.persistence;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.waj.tool.model.ApSnapshot;
-import com.waj.tool.model.SurveyPoint;
+import com.opensitesurvey.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.SurveyPoint;
 
 import java.io.File;
 import java.io.IOException;

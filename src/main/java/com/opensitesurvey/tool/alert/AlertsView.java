@@ -1,9 +1,9 @@
-package com.waj.tool.alert;
+package com.opensitesurvey.tool.alert;
 
-import com.waj.tool.i18n.Messages;
-import com.waj.tool.util.MonoTableCells;
-import com.waj.tool.util.RiskColors;
-import com.waj.tool.util.TooltipSupport;
+import com.opensitesurvey.tool.i18n.Messages;
+import com.opensitesurvey.tool.util.MonoTableCells;
+import com.opensitesurvey.tool.util.RiskColors;
+import com.opensitesurvey.tool.util.TooltipSupport;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

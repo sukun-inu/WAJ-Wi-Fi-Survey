@@ -1,7 +1,7 @@
-package com.waj.tool.channel;
+package com.opensitesurvey.tool.channel;
 
-import com.waj.tool.model.ApSnapshot;
-import com.waj.tool.security.SecurityType;
+import com.opensitesurvey.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.security.SecurityType;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

@@ -1,7 +1,7 @@
-package com.waj.tool.util;
+package com.opensitesurvey.tool.util;
 
-import com.waj.tool.alert.AlertSeverity;
-import com.waj.tool.security.SecurityType;
+import com.opensitesurvey.tool.alert.AlertSeverity;
+import com.opensitesurvey.tool.security.SecurityType;
 import javafx.scene.paint.Color;
 
 /**

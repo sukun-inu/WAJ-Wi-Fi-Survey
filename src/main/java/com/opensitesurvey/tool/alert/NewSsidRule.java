@@ -1,8 +1,8 @@
-package com.waj.tool.alert;
+package com.opensitesurvey.tool.alert;
 
-import com.waj.tool.i18n.Messages;
-import com.waj.tool.model.ApSnapshot;
-import com.waj.tool.model.ScanSnapshot;
+import com.opensitesurvey.tool.i18n.Messages;
+import com.opensitesurvey.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.ScanSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;

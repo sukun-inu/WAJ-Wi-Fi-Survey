@@ -1,20 +1,20 @@
-package com.waj.tool.ui.survey;
+package com.opensitesurvey.tool.ui.survey;
 
-import com.waj.tool.i18n.Messages;
-import com.waj.tool.model.ApSnapshot;
-import com.waj.tool.model.ScanSnapshot;
-import com.waj.tool.model.SurveyPoint;
-import com.waj.tool.model.SurveyProject;
-import com.waj.tool.persistence.CsvExporter;
-import com.waj.tool.persistence.JsonExporter;
-import com.waj.tool.persistence.SurveyProjectStore;
-import com.waj.tool.ping.PingProbe;
-import com.waj.tool.report.HtmlReportGenerator;
-import com.waj.tool.report.PdfReportGenerator;
-import com.waj.tool.report.ReportData;
-import com.waj.tool.util.AppTheme;
-import com.waj.tool.util.SignalColorScale;
-import com.waj.tool.util.TooltipSupport;
+import com.opensitesurvey.tool.i18n.Messages;
+import com.opensitesurvey.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.ScanSnapshot;
+import com.opensitesurvey.tool.model.SurveyPoint;
+import com.opensitesurvey.tool.model.SurveyProject;
+import com.opensitesurvey.tool.persistence.CsvExporter;
+import com.opensitesurvey.tool.persistence.JsonExporter;
+import com.opensitesurvey.tool.persistence.SurveyProjectStore;
+import com.opensitesurvey.tool.ping.PingProbe;
+import com.opensitesurvey.tool.report.HtmlReportGenerator;
+import com.opensitesurvey.tool.report.PdfReportGenerator;
+import com.opensitesurvey.tool.report.ReportData;
+import com.opensitesurvey.tool.util.AppTheme;
+import com.opensitesurvey.tool.util.SignalColorScale;
+import com.opensitesurvey.tool.util.TooltipSupport;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -319,7 +319,7 @@ public final class SurveyView {
     private void onLoadComparison() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle(Messages.get("survey.chooser.loadComparison"));
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("WAJ Survey Project", "*.json"));
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("OpenSiteSurvey Project", "*.json"));
         File file = chooser.showOpenDialog(currentStage());
         if (file == null) {
             return;
@@ -466,7 +466,7 @@ public final class SurveyView {
     private void onSaveProject() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle(Messages.get("survey.chooser.saveProject"));
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("WAJ Survey Project", "*.wajproj.json"));
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("OpenSiteSurvey Project", "*.ossproj.json"));
         File file = chooser.showSaveDialog(currentStage());
         if (file == null) {
             return;
@@ -486,7 +486,7 @@ public final class SurveyView {
     private void onLoadProject() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle(Messages.get("survey.chooser.loadProject"));
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("WAJ Survey Project", "*.json"));
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("OpenSiteSurvey Project", "*.json"));
         File file = chooser.showOpenDialog(currentStage());
         if (file == null) {
             return;

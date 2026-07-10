@@ -1,8 +1,8 @@
-package com.waj.tool.report;
+package com.opensitesurvey.tool.report;
 
-import com.waj.tool.i18n.Messages;
-import com.waj.tool.model.SurveyPoint;
-import com.waj.tool.security.SecurityType;
+import com.opensitesurvey.tool.i18n.Messages;
+import com.opensitesurvey.tool.model.SurveyPoint;
+import com.opensitesurvey.tool.security.SecurityType;
 
 import java.time.Instant;
 import java.time.ZoneId;

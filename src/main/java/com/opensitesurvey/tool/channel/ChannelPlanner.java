@@ -1,6 +1,6 @@
-package com.waj.tool.channel;
+package com.opensitesurvey.tool.channel;
 
-import com.waj.tool.model.ApSnapshot;
+import com.opensitesurvey.tool.model.ApSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;

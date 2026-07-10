@@ -1,4 +1,4 @@
-package com.waj.tool.util;
+package com.opensitesurvey.tool.util;
 
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;

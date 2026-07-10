@@ -1,15 +1,15 @@
-package com.waj.tool.persistence;
+package com.opensitesurvey.tool.persistence;
 
 import java.io.File;
 
-/** Per-user application data directory: {@code ~/.waj-wifi-survey/}. */
+/** Per-user application data directory: {@code ~/.opensitesurvey/}. */
 public final class AppPaths {
 
     private AppPaths() {
     }
 
     public static File appDataDir() {
-        File dir = new File(System.getProperty("user.home"), ".waj-wifi-survey");
+        File dir = new File(System.getProperty("user.home"), ".opensitesurvey");
         if (!dir.exists()) {
             dir.mkdirs();
         }

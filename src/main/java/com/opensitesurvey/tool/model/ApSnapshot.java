@@ -1,12 +1,12 @@
-package com.waj.tool.model;
+package com.opensitesurvey.tool.model;
 
-import com.waj.tool.channel.BssLoadParser;
-import com.waj.tool.channel.ChannelWidthParser;
-import com.waj.tool.security.SecurityClassifier;
-import com.waj.tool.security.SecurityType;
-import com.waj.tool.util.ChannelUtil;
-import com.waj.tool.util.PhyTypeUtil;
-import com.waj.tool.wlan.WlanBssEntry;
+import com.opensitesurvey.tool.channel.BssLoadParser;
+import com.opensitesurvey.tool.channel.ChannelWidthParser;
+import com.opensitesurvey.tool.security.SecurityClassifier;
+import com.opensitesurvey.tool.security.SecurityType;
+import com.opensitesurvey.tool.util.ChannelUtil;
+import com.opensitesurvey.tool.util.PhyTypeUtil;
+import com.opensitesurvey.tool.wlan.WlanBssEntry;
 
 import java.time.Instant;
 

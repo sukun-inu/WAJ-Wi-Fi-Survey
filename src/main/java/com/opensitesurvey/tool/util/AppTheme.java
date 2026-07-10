@@ -1,4 +1,4 @@
-package com.waj.tool.util;
+package com.opensitesurvey.tool.util;
 
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;

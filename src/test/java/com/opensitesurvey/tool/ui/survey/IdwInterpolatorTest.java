@@ -1,6 +1,6 @@
-package com.waj.tool.ui.survey;
+package com.opensitesurvey.tool.ui.survey;
 
-import com.waj.tool.model.SurveyPoint;
+import com.opensitesurvey.tool.model.SurveyPoint;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
