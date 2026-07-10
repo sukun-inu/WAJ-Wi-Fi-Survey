@@ -178,6 +178,42 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 2.5, 0.4, 0, 1);
 }
 
+/*
+ * Dashboard spectrum overlay: per-candidate-channel congestion score from Channel Planning,
+ * drawn when the "show Channel Planning congestion" checkbox is checked - fixed colors (not the
+ * per-BSSID categorical palette) since these curves represent a channel, not an AP. Deliberately
+ * thin/low-opacity/solid (not the utilization curve's bold dashed white) and added to the chart
+ * *behind* every AP/utilization curve (see DashboardView#refreshSpectrumChart) so this overlay
+ * reads as a soft backdrop "landscape" rather than competing with - and burying - the data that
+ * was already on this chart. The recommended channel's own curve is a bit bolder so it still
+ * stands out among the other (deliberately muted) candidates, and gets a companion vertical
+ * marker line instead of a per-channel label (see .channel-planning-recommended-marker) - only
+ * one is spent on the whole chart rather than one per candidate channel.
+ */
+.channel-planning-congestion-curve {
+    -fx-stroke: #f5a623;
+    -fx-stroke-width: 1px;
+    -fx-opacity: 0.4;
+}
+
+.channel-planning-recommended-curve {
+    -fx-stroke: #3ddc73;
+    -fx-stroke-width: 2px;
+    -fx-opacity: 0.75;
+}
+
+.channel-planning-recommended-marker {
+    -fx-stroke: #3ddc73;
+    -fx-stroke-width: 1.5px;
+    -fx-stroke-dash-array: 6 4;
+    -fx-opacity: 0.8;
+}
+
+.channel-planning-summary-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #c6cdd4;
+}
+
 .snr-axis-title {
     -fx-font-size: 10px;
     -fx-text-fill: #c6cdd4;
@@ -218,4 +254,20 @@
 
 .crosshair-header {
     -fx-font-weight: bold;
+}
+
+/*
+ * Wraps a hover panel's entry list (ChartCrosshair, ChannelPlanningView's own hoverEntriesBox) so
+ * a long line scrolls into view instead of being clipped with "..." - Modena's default ScrollPane
+ * chrome (a light bordered box + gray viewport) doesn't match this app's dark theme, so both the
+ * pane and its inner viewport are forced transparent/borderless here.
+ */
+.crosshair-scroll {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+}
+
+.crosshair-scroll > .viewport {
+    -fx-background-color: transparent;
 }

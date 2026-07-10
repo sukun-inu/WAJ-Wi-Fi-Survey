@@ -50,6 +50,13 @@ public final class TraceroutePoller {
 
     private volatile List<TracerouteProbe.Hop> hops = List.of();
     private Future<?> discoveryTask;
+    // Set as soon as discoverRoute() spawns tracert.exe - stop() destroys it directly rather than
+    // relying on discoveryTask.cancel(true), since a blocked Process#getInputStream() read (which
+    // is where discoverRoute() spends nearly all its time) does not respond to Thread.interrupt();
+    // destroying the process is what actually unblocks that read (EOF), letting a stop()+start()
+    // for a new host take effect immediately instead of waiting out the old discovery's own
+    // (up to tens-of-seconds) internal timeout.
+    private volatile Process discoveryProcess;
     private ScheduledFuture<?> pingTask;
 
     public TraceroutePoller(Consumer<List<TracerouteProbe.Hop>> onRouteDiscovered,
@@ -63,8 +70,8 @@ public final class TraceroutePoller {
         stop();
         hops = List.of();
         discoveryTask = executor.submit(() -> {
-            List<TracerouteProbe.Hop> discovered =
-                    TracerouteProbe.discoverRoute(host, MAX_HOPS, DISCOVERY_PER_HOP_TIMEOUT_MILLIS);
+            List<TracerouteProbe.Hop> discovered = TracerouteProbe.discoverRoute(
+                    host, MAX_HOPS, DISCOVERY_PER_HOP_TIMEOUT_MILLIS, p -> discoveryProcess = p);
             hops = discovered;
             onRouteDiscovered.accept(discovered);
             // Chained rather than scheduled with a guessed initial delay: discovery can take
@@ -82,6 +89,11 @@ public final class TraceroutePoller {
             discoveryTask.cancel(true);
             discoveryTask = null;
         }
+        Process process = discoveryProcess;
+        if (process != null && process.isAlive()) {
+            process.destroyForcibly();
+        }
+        discoveryProcess = null;
         if (pingTask != null) {
             pingTask.cancel(true);
             pingTask = null;

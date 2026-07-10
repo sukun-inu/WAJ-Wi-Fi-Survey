@@ -8,6 +8,7 @@ import com.opensitesurvey.tool.util.CategoricalColorPalette;
 import com.opensitesurvey.tool.util.ChannelUtil;
 import com.opensitesurvey.tool.util.TooltipSupport;
 import javafx.application.Platform;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -16,6 +17,7 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -72,6 +74,7 @@ public final class ChannelPlanningView {
     private final VBox hoverPanel = new VBox(3);
     private final Label hoverHeader = new Label();
     private final VBox hoverEntriesBox = new VBox(2);
+    private final ScrollPane hoverEntriesScroll = new ScrollPane(hoverEntriesBox);
 
     private final List<Panel> panels = new ArrayList<>();
     private final VBox panelsColumn = new VBox(8);
@@ -142,7 +145,24 @@ public final class ChannelPlanningView {
         hoverHeader.getStyleClass().add("crosshair-header");
         hoverPanel.getStyleClass().add("crosshair-panel");
         hoverPanel.setMinWidth(220);
-        hoverPanel.getChildren().addAll(hoverHeader, hoverEntriesBox);
+        // Scrolls instead of clipping when a channel's contributor list has a long "SSID (mac):
+        // score (使用率suffix)" row or many contributing APs - see ChartCrosshair's own analogous
+        // fix for Dashboard/History's hover panels.
+        hoverEntriesScroll.setFitToWidth(false);
+        hoverEntriesScroll.setFitToHeight(false);
+        hoverEntriesScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        hoverEntriesScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        hoverEntriesScroll.getStyleClass().add("crosshair-scroll");
+        VBox.setVgrow(hoverEntriesScroll, Priority.ALWAYS);
+        hoverPanel.getChildren().addAll(hoverHeader, hoverEntriesScroll);
+        // Mirrors each curve's own guarded exited handler (see buildPanel()): leaving the panel
+        // for anywhere that isn't back onto a curve clears the breakdown; leaving it for a curve
+        // is harmless even without a check here, since that curve's own entered handler
+        // immediately repopulates it anyway.
+        hoverPanel.setOnMouseExited(ev -> {
+            hoveredChannel = null;
+            showHoverPlaceholder();
+        });
         showHoverPlaceholder();
         TooltipSupport.set(hoverPanel, Messages.get("tooltip.channelPlanning.hoverPanel"));
 
@@ -343,7 +363,16 @@ public final class ChannelPlanningView {
                         hoveredChannel = channel;
                         showChannelBreakdown(channel, rec);
                     });
+                    // hoverPanel sits outside this curve's own bounds, so moving the mouse onto it
+                    // - e.g. to reach hoverEntriesScroll's scrollbar and read a long contributor
+                    // row that didn't fit - would otherwise immediately fire this exited handler
+                    // and wipe the breakdown the user just moved over to read. Skip the clear when
+                    // the exit point lands on the panel; hoverPanel's own exited handler (below,
+                    // once for every curve rather than duplicated per curve) covers leaving it.
                     seriesGroup.setOnMouseExited(ev -> {
+                        if (isPointOverNode(hoverPanel, ev.getScreenX(), ev.getScreenY())) {
+                            return;
+                        }
                         hoveredChannel = null;
                         showHoverPlaceholder();
                     });
@@ -458,5 +487,10 @@ public final class ChannelPlanningView {
                     Label row = new Label(Messages.get("channelPlanning.hover.row", ssidLabel, shortMac, c.contribution(), utilText));
                     hoverEntriesBox.getChildren().add(new HBox(6, swatch, row));
                 });
+    }
+
+    private static boolean isPointOverNode(Node node, double screenX, double screenY) {
+        Bounds bounds = node.localToScreen(node.getBoundsInLocal());
+        return bounds != null && bounds.contains(screenX, screenY);
     }
 }

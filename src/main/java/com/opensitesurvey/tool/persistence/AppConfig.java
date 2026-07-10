@@ -23,15 +23,19 @@ public class AppConfig {
         }
     }
 
-    public int rssiThresholdDbm = -75;
+    // volatile: SettingsDialog writes these on the JavaFX Application thread (Save button) while
+    // the WLAN poller's background thread reads them once per scan cycle via AlertRule.evaluate()
+    // - without a happens-before edge, the poller could keep observing stale values (or, for the
+    // non-atomic double, theoretically a torn read) for an unbounded time after Save.
+    public volatile int rssiThresholdDbm = -75;
     /** Compared directly against {@code ChannelPlanner} scores (roughly 0-100+ per nearby AP). */
-    public double channelCongestionThreshold = 50.0;
+    public volatile double channelCongestionThreshold = 50.0;
 
-    public boolean rssiAlertEnabled = true;
-    public boolean rogueApAlertEnabled = true;
-    public boolean newSsidAlertEnabled = true;
-    public boolean channelCongestionAlertEnabled = true;
-    public boolean windowsNotificationsEnabled = true;
+    public volatile boolean rssiAlertEnabled = true;
+    public volatile boolean rogueApAlertEnabled = true;
+    public volatile boolean newSsidAlertEnabled = true;
+    public volatile boolean channelCongestionAlertEnabled = true;
+    public volatile boolean windowsNotificationsEnabled = true;
 
     public List<TrustedAp> trustedAps = new ArrayList<>();
 

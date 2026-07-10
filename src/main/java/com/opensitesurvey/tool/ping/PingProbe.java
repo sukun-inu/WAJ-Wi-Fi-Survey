@@ -40,6 +40,24 @@ public final class PingProbe {
             process = new ProcessBuilder("ping", "-n", "1", "-w", String.valueOf(timeoutMillis), host.trim())
                     .redirectErrorStream(true)
                     .start();
+            // ping.exe's own -w flag only bounds the ICMP echo wait, not e.g. a slow/unresponsive
+            // DNS resolution phase for a hostname target - if the process is still alive past our
+            // own timeout, force-kill it so the blocking readLine() loop below is guaranteed to
+            // unblock (EOF, since destroying the process closes its stdout pipe) instead of
+            // hanging this thread indefinitely on a process that never prints another line.
+            Process watchedProcess = process;
+            Thread watchdog = new Thread(() -> {
+                try {
+                    if (!watchedProcess.waitFor(timeoutMillis + 2000L, TimeUnit.MILLISECONDS)) {
+                        watchedProcess.destroyForcibly();
+                    }
+                } catch (InterruptedException ignored) {
+                    // best-effort watchdog only
+                }
+            }, "ping-watchdog");
+            watchdog.setDaemon(true);
+            watchdog.start();
+
             StringBuilder output = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), CONSOLE_CHARSET))) {
                 String line;

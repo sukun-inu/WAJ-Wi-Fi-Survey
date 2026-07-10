@@ -19,17 +19,20 @@ public final class NewSsidRule implements AlertRule {
     @Override
     public List<Alert> evaluate(ScanSnapshot snapshot, AlertContext context) {
         List<Alert> alerts = new ArrayList<>();
-        if (context.config.newSsidAlertEnabled) {
-            for (ApSnapshot ap : snapshot.accessPoints()) {
-                if (ap.ssid().isEmpty()) {
-                    continue;
-                }
-                boolean isNew = context.seenSsids.add(ap.ssid());
-                if (isNew && baselineEstablished) {
-                    alerts.add(new Alert(snapshot.timestamp(), AlertSeverity.INFO,
-                            Messages.get("alert.category.newSsid"),
-                            Messages.get("alert.message.newSsid", ap.ssid()), ap.bssid()));
-                }
+        // seenSsids is updated unconditionally, even while the rule is disabled - otherwise an
+        // SSID that first appears while disabled is never recorded, and re-enabling the rule
+        // later would then misfire a "new SSID" alert for an AP that has actually been present
+        // the whole time. Only the alert *emission* is gated on the enabled flag.
+        boolean enabled = context.config.newSsidAlertEnabled;
+        for (ApSnapshot ap : snapshot.accessPoints()) {
+            if (ap.ssid().isEmpty()) {
+                continue;
+            }
+            boolean isNew = context.seenSsids.add(ap.ssid());
+            if (enabled && isNew && baselineEstablished) {
+                alerts.add(new Alert(snapshot.timestamp(), AlertSeverity.INFO,
+                        Messages.get("alert.category.newSsid"),
+                        Messages.get("alert.message.newSsid", ap.ssid()), ap.bssid()));
             }
         }
         baselineEstablished = true;

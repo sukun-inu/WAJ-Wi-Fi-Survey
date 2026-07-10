@@ -6,6 +6,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,6 +45,21 @@ public final class TracerouteProbe {
      *         subsequently ping for it anyway.
      */
     public static List<Hop> discoverRoute(String host, int maxHops, int perHopTimeoutMillis) {
+        return discoverRoute(host, maxHops, perHopTimeoutMillis, null);
+    }
+
+    /**
+     * Same as {@link #discoverRoute(String, int, int)}, but hands the started {@link Process} to
+     * {@code onProcessStarted} (if non-null) as soon as it's spawned - {@code
+     * discoverRoute(host, maxHops, perHopTimeoutMillis)}'s blocking {@code readLine()} loop below
+     * does not respond to {@code Thread.interrupt()} (that's only honored by interruptible NIO
+     * channels, not a plain {@code Process}'s stdout stream), so a caller that wants to cancel a
+     * discovery in progress - e.g. {@code TraceroutePoller} switching to a new host - needs a
+     * direct handle on the process to {@code destroyForcibly()}, which unblocks the read loop via
+     * EOF instead.
+     */
+    public static List<Hop> discoverRoute(String host, int maxHops, int perHopTimeoutMillis,
+                                           Consumer<Process> onProcessStarted) {
         List<Hop> hops = new ArrayList<>();
         if (host == null || host.isBlank()) {
             return hops;
@@ -59,6 +75,9 @@ public final class TracerouteProbe {
                     "-w", String.valueOf(perHopTimeoutMillis), host.trim())
                     .redirectErrorStream(true)
                     .start();
+            if (onProcessStarted != null) {
+                onProcessStarted.accept(process);
+            }
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getInputStream(), CONSOLE_CHARSET))) {
                 String line;

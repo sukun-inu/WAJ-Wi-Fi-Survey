@@ -28,7 +28,6 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -162,13 +161,14 @@ public final class HistoryView {
         checklistBox.setMinWidth(180);
         VBox.setVgrow(bssidChecklist, Priority.ALWAYS);
 
-        ScrollPane crosshairScroll = new ScrollPane(crosshair.getPanel());
-        crosshairScroll.setFitToWidth(true);
-        crosshairScroll.setPrefWidth(190);
-        crosshairScroll.setMinWidth(170);
-        TooltipSupport.set(crosshairScroll, Messages.get("tooltip.common.crosshairPanel"));
+        // ChartCrosshair's own panel already scrolls its entries internally (both directions, so
+        // a long "SSID (macsuffix): -36 dBm (...)" entry or a tall stack of checked BSSIDs scrolls
+        // into view instead of being clipped) - just pin its width here, same as Dashboard's usage.
+        crosshair.getPanel().setPrefWidth(190);
+        crosshair.getPanel().setMinWidth(170);
+        TooltipSupport.set(crosshair.getPanel(), Messages.get("tooltip.common.crosshairPanel"));
 
-        HBox chartRow = new HBox(4, chart, crosshairScroll);
+        HBox chartRow = new HBox(4, chart, crosshair.getPanel());
         HBox.setHgrow(chart, Priority.ALWAYS);
         HBox chartToolbar = new HBox(6, yZoomResetButton);
         chartToolbar.setAlignment(Pos.CENTER_LEFT);

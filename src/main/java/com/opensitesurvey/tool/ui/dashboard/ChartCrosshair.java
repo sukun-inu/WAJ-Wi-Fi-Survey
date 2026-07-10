@@ -2,12 +2,15 @@ package com.opensitesurvey.tool.ui.dashboard;
 
 import com.opensitesurvey.tool.i18n.Messages;
 import javafx.application.Platform;
+import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.chart.Chart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -51,6 +54,7 @@ public final class ChartCrosshair {
     private final VBox panel = new VBox(3);
     private final Label headerLabel = new Label();
     private final VBox entriesBox = new VBox(2);
+    private final ScrollPane entriesScroll = new ScrollPane(entriesBox);
     private final Line crosshairLine = new Line();
 
     private final Chart chart;
@@ -61,6 +65,7 @@ public final class ChartCrosshair {
 
     private double defaultYLower;
     private double defaultYUpper;
+    private Region plotArea;
 
     public ChartCrosshair(Chart chart, PlotAnnotatable annotationTarget, NumberAxis xAxis,
                            Function<Double, String> xFormatter, Function<Double, List<Entry>> entriesAt) {
@@ -81,15 +86,24 @@ public final class ChartCrosshair {
         crosshairLine.setVisible(false);
         annotationTarget.addAnnotation(crosshairLine);
 
-        // No fixed prefWidth: a VBox's default computed width is already the widest child's
-        // preferred width, so leaving it alone lets the panel grow to fit whatever the current
-        // entries need (e.g. the longer "... (使用率100%)" suffix) without truncating, and shrink
-        // back down when they don't. Only a floor is set, so it's never awkwardly narrow when a
-        // hover position has just one short entry.
+        // A caller (Dashboard, History) typically pins this panel to a fairly narrow fixed width
+        // so the chart itself keeps most of the row's space - which used to mean a long entry
+        // ("SSID (macsuffix): -36 dBm (チャネル使用率45%)") got silently clipped with an ellipsis,
+        // hiding exactly the detail a user just hovered to read. Wrapping entriesBox in its own
+        // ScrollPane (fitToWidth/fitToHeight both false, so it never squeezes its content down to
+        // the viewport) turns that clipping into a scrollbar instead - nothing is ever hidden, it's
+        // just scrolled into view on demand. Only a floor width is set on the outer panel, so it's
+        // never awkwardly narrow when a hover position has just one short entry.
         panel.setMinWidth(210);
         panel.getStyleClass().add("crosshair-panel");
         headerLabel.getStyleClass().add("crosshair-header");
-        panel.getChildren().addAll(headerLabel, entriesBox);
+        entriesScroll.setFitToWidth(false);
+        entriesScroll.setFitToHeight(false);
+        entriesScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        entriesScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        entriesScroll.getStyleClass().add("crosshair-scroll");
+        VBox.setVgrow(entriesScroll, Priority.ALWAYS);
+        panel.getChildren().addAll(headerLabel, entriesScroll);
         showPlaceholder();
 
         whenPlotAreaReady(this::wireMouseHandlers);
@@ -119,6 +133,7 @@ public final class ChartCrosshair {
     }
 
     private void wireMouseHandlers(Region plotArea) {
+        this.plotArea = plotArea;
         plotArea.setOnMouseMoved(e -> {
             double dataX = xAxis.getValueForDisplay(e.getX()).doubleValue();
             headerLabel.setText(xFormatter.apply(dataX));
@@ -130,10 +145,32 @@ public final class ChartCrosshair {
             crosshairLine.setEndY(plotArea.getBoundsInLocal().getHeight());
             crosshairLine.setVisible(true);
         });
+        // The panel sits right next to the chart (not inside plotArea), so moving the mouse onto
+        // it - e.g. to reach entriesScroll's horizontal scrollbar and read a long entry that
+        // didn't fit - crosses out of plotArea's own bounds and would otherwise immediately fire
+        // this exited handler, wiping the very entries the user just moved over to read. Checking
+        // the exit point's screen position against the panel's own current bounds (rather than
+        // just always clearing) lets the mouse cross that boundary without losing the display;
+        // the panel's own mirrored handler below covers the reverse direction.
         plotArea.setOnMouseExited(e -> {
+            if (isPointOverNode(panel, e.getScreenX(), e.getScreenY())) {
+                return;
+            }
             crosshairLine.setVisible(false);
             showPlaceholder();
         });
+        panel.setOnMouseExited(e -> {
+            if (isPointOverNode(plotArea, e.getScreenX(), e.getScreenY())) {
+                return;
+            }
+            crosshairLine.setVisible(false);
+            showPlaceholder();
+        });
+    }
+
+    private static boolean isPointOverNode(Node node, double screenX, double screenY) {
+        Bounds bounds = node.localToScreen(node.getBoundsInLocal());
+        return bounds != null && bounds.contains(screenX, screenY);
     }
 
     private void showPlaceholder() {

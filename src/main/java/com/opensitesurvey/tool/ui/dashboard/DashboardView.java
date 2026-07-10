@@ -1,6 +1,7 @@
 package com.opensitesurvey.tool.ui.dashboard;
 
 import com.opensitesurvey.tool.alert.TrustedApRegistry;
+import com.opensitesurvey.tool.channel.ChannelPlanner;
 import com.opensitesurvey.tool.i18n.Messages;
 import com.opensitesurvey.tool.model.ApSnapshot;
 import com.opensitesurvey.tool.model.ScanSnapshot;
@@ -8,6 +9,7 @@ import com.opensitesurvey.tool.persistence.CsvExporter;
 import com.opensitesurvey.tool.persistence.JsonExporter;
 import com.opensitesurvey.tool.util.AppTheme;
 import com.opensitesurvey.tool.util.CategoricalColorPalette;
+import com.opensitesurvey.tool.util.ChannelUtil;
 import com.opensitesurvey.tool.util.MonoTableCells;
 import com.opensitesurvey.tool.util.NoiseEstimator;
 import com.opensitesurvey.tool.util.TooltipSupport;
@@ -29,6 +31,7 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
@@ -46,6 +49,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
@@ -74,6 +78,13 @@ import java.util.Map;
  * existing RSSI curve doubles as the SNR curve with no extra series needed, only a second scale.
  * Both are RSSI modelled as a bell curve per AP around its center frequency - not a real RF
  * spectrum reading, see {@code dashboard.spectrum.disclaimer} in the message bundles.
+ *
+ * <p>Optionally (a toolbar checkbox, off by default), the same per-candidate-channel congestion
+ * score the Channel Planning tab computes ({@link ChannelPlanner#recommend}) can be overlaid on
+ * top of the trace: one curve per candidate channel in the currently selected band, normalized so the
+ * highest-scoring channel reaches this chart's dBm ceiling, with the recommended channel drawn in
+ * a distinct color - lets a user cross-check Channel Planning's recommendation without switching
+ * tabs.
  */
 public final class DashboardView {
 
@@ -87,6 +98,8 @@ public final class DashboardView {
             new AnnotatedLineChart<>(rssiHistoryXAxis, rssiHistoryYAxis);
 
     private final ComboBox<String> bandSelector = new ComboBox<>();
+    private final CheckBox showChannelPlanningCheckBox = new CheckBox();
+    private final Label channelPlanningSummaryLabel = new Label();
 
     private final NumberAxis spectrumXAxis = new NumberAxis();
     private final NumberAxis spectrumYAxis = new NumberAxis(-100, -20, 10);
@@ -353,6 +366,12 @@ public final class DashboardView {
             refreshSpectrogram();
         });
 
+        showChannelPlanningCheckBox.setText(Messages.get("dashboard.spectrum.showChannelPlanning"));
+        showChannelPlanningCheckBox.selectedProperty().addListener((obs, old, val) -> refreshSpectrumChart(lastSnapshot));
+        channelPlanningSummaryLabel.setVisible(false);
+        channelPlanningSummaryLabel.setManaged(false);
+        channelPlanningSummaryLabel.getStyleClass().add("channel-planning-summary-label");
+
         spectrumChart.setTitle(Messages.get("dashboard.spectrum.disclaimer"));
         spectrumChart.setCreateSymbols(false);
         spectrumChart.setAnimated(false);
@@ -492,6 +511,7 @@ public final class DashboardView {
         TooltipSupport.set(exportJsonButton, Messages.get("tooltip.dashboard.exportJson"));
         TooltipSupport.set(apTable, Messages.get("tooltip.dashboard.apTable"));
         TooltipSupport.set(bandSelector, Messages.get("tooltip.dashboard.bandSelector"));
+        TooltipSupport.set(showChannelPlanningCheckBox, Messages.get("tooltip.dashboard.showChannelPlanning"));
         TooltipSupport.set(noiseFloorLabel, Messages.get("tooltip.dashboard.noiseFloor"));
         TooltipSupport.install(rssiHistoryChart, Messages.get("tooltip.dashboard.rssiChart"));
         TooltipSupport.install(spectrumChart, Messages.get("tooltip.dashboard.spectrumChart"));
@@ -521,12 +541,12 @@ public final class DashboardView {
         HBox.setHgrow(spectrumChart, Priority.ALWAYS);
         spectrumCrosshair.getPanel().setMinWidth(180);
         spectrumCrosshair.getPanel().setPrefWidth(190);
-        HBox spectrumToolbar = new HBox(6, bandSelector, spectrumYZoomResetButton);
+        HBox spectrumToolbar = new HBox(6, bandSelector, showChannelPlanningCheckBox, spectrumYZoomResetButton);
         spectrumToolbar.setAlignment(Pos.CENTER_LEFT);
 
         // Everything - toolbar, trace curve, SNR second axis, and the waterfall backdrop drawn
         // behind the curve - lives inside this one bordered card.
-        VBox spectrumBox = new VBox(2, spectrumToolbar, traceRow, noiseFloorLabel);
+        VBox spectrumBox = new VBox(2, spectrumToolbar, traceRow, noiseFloorLabel, channelPlanningSummaryLabel);
         spectrumBox.getStyleClass().add("card");
         VBox.setVgrow(traceRow, Priority.ALWAYS);
 
@@ -642,6 +662,10 @@ public final class DashboardView {
                                       XYChart.Series<Number, Number> series) {
     }
 
+    /** One candidate channel's Channel Planning congestion curve, overlaid when the checkbox is checked. */
+    private record ChannelCongestionEntry(boolean recommended, XYChart.Series<Number, Number> series) {
+    }
+
     private void refreshSpectrumChart(ScanSnapshot snapshot) {
         for (Node annotation : spectrumAnnotations) {
             spectrumChart.removeAnnotation(annotation);
@@ -661,6 +685,58 @@ public final class DashboardView {
         double sigma = range[2];
         spectrumXAxis.setLowerBound(startMhz);
         spectrumXAxis.setUpperBound(endMhz);
+        int steps = 60;
+
+        // Channel Planning's congestion overlay is built and added to the chart FIRST, before any
+        // AP/utilization curve - JavaFX renders a chart's series back-to-front in data-list order,
+        // so adding these first guarantees they always sit *behind* every AP/utilization curve
+        // rather than burying them under a dozen extra lines (the original complaint with this
+        // feature). Each candidate channel's own bump is drawn much narrower than an AP's RSSI
+        // curve (a fraction of its overlap-modelling sigma) so neighboring channels stay visually
+        // distinct instead of blurring into one wide haze, and only the recommended channel gets a
+        // text label - every other candidate's relative height already reads as "how busy", and
+        // the exact per-channel score/breakdown remains one click away on the Channel Planning tab.
+        List<ChannelCongestionEntry> congestionEntries = new ArrayList<>();
+        Double recommendedCenterMhz = null;
+        Integer recommendedChannel = null;
+        if (showChannelPlanningCheckBox.isSelected()) {
+            ChannelPlanner.Recommendation rec = ChannelPlanner.recommend(snapshot.accessPoints(), band);
+            double maxScore = rec.allScores().values().stream().mapToDouble(Double::doubleValue).max().orElse(0);
+            double congestionSigma = sigma / 3.0;
+            if (maxScore > 0) {
+                for (Map.Entry<Integer, Double> scoreEntry : rec.allScores().entrySet()) {
+                    int channel = scoreEntry.getKey();
+                    double centerMhz = ChannelUtil.channelToFrequencyMhz(band, channel);
+                    if (centerMhz < startMhz || centerMhz > endMhz) {
+                        continue;
+                    }
+                    boolean recommended = channel == rec.channel();
+                    double peakY = SPECTRUM_Y_NOMINAL_LOWER
+                            + (SPECTRUM_Y_NOMINAL_UPPER - SPECTRUM_Y_NOMINAL_LOWER) * (scoreEntry.getValue() / maxScore);
+                    XYChart.Series<Number, Number> congestionSeries = new XYChart.Series<>();
+                    for (int i = 0; i <= steps; i++) {
+                        double f = startMhz + (endMhz - startMhz) * i / steps;
+                        double gaussian = Math.exp(-Math.pow(f - centerMhz, 2) / (2 * congestionSigma * congestionSigma));
+                        double y = SPECTRUM_Y_NOMINAL_LOWER + (peakY - SPECTRUM_Y_NOMINAL_LOWER) * gaussian;
+                        congestionSeries.getData().add(new XYChart.Data<>(f, y));
+                    }
+                    spectrumChart.getData().add(congestionSeries);
+                    congestionEntries.add(new ChannelCongestionEntry(recommended, congestionSeries));
+                    if (recommended) {
+                        recommendedCenterMhz = centerMhz;
+                        recommendedChannel = channel;
+                    }
+                }
+            }
+            channelPlanningSummaryLabel.setText(Messages.get("channelPlanning.recommendation", rec.channel(), rec.score()));
+            channelPlanningSummaryLabel.setVisible(true);
+            channelPlanningSummaryLabel.setManaged(true);
+        } else {
+            channelPlanningSummaryLabel.setVisible(false);
+            channelPlanningSummaryLabel.setManaged(false);
+        }
+        Double finalRecommendedCenterMhz = recommendedCenterMhz;
+        Integer finalRecommendedChannel = recommendedChannel;
 
         List<SpectrumPeakEntry> peaks = new ArrayList<>();
         List<XYChart.Series<Number, Number>> utilizationSeriesList = new ArrayList<>();
@@ -671,7 +747,6 @@ public final class DashboardView {
             double centerMhz = ap.frequencyKhz() / 1000.0;
             XYChart.Series<Number, Number> series = new XYChart.Series<>();
             series.setName(labelFor(ap.bssid()));
-            int steps = 60;
             for (int i = 0; i <= steps; i++) {
                 double f = startMhz + (endMhz - startMhz) * i / steps;
                 double gaussian = Math.exp(-Math.pow(f - centerMhz, 2) / (2 * sigma * sigma));
@@ -741,6 +816,33 @@ public final class DashboardView {
                 if (utilSeries.getNode() != null) {
                     utilSeries.getNode().getStyleClass().add("utilization-series");
                 }
+            }
+            for (ChannelCongestionEntry c : congestionEntries) {
+                if (c.series().getNode() != null) {
+                    c.series().getNode().getStyleClass().add(
+                            c.recommended() ? "channel-planning-recommended-curve" : "channel-planning-congestion-curve");
+                }
+            }
+            // A single marker for the recommended channel, not a label per candidate curve - the
+            // whole point of this pass is decluttering; the other candidates' relative curve
+            // height already conveys "how busy", and the exact per-channel score is one click away
+            // on the Channel Planning tab.
+            if (finalRecommendedCenterMhz != null) {
+                double px = spectrumXAxis.getDisplayPosition(finalRecommendedCenterMhz);
+                Line marker = new Line(px, 0, px, spectrumPlotHeight);
+                marker.getStyleClass().add("channel-planning-recommended-marker");
+                marker.setMouseTransparent(true);
+                spectrumChart.addAnnotation(marker);
+                spectrumAnnotations.add(marker);
+
+                Text recLabel = new Text(Messages.get("channelPlanning.recommendedLabel") + " Ch" + finalRecommendedChannel);
+                recLabel.setFill(Color.web("#3ddc73"));
+                recLabel.getStyleClass().add("chart-annotation-label");
+                recLabel.setX(px + 4);
+                recLabel.setY(14);
+                recLabel.setMouseTransparent(true);
+                spectrumChart.addAnnotation(recLabel);
+                spectrumAnnotations.add(recLabel);
             }
         }));
     }
