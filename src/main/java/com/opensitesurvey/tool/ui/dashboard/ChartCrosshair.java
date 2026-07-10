@@ -2,7 +2,6 @@ package com.opensitesurvey.tool.ui.dashboard;
 
 import com.opensitesurvey.tool.i18n.Messages;
 import javafx.application.Platform;
-import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.chart.Chart;
 import javafx.scene.chart.NumberAxis;
@@ -35,6 +34,12 @@ import java.util.function.Function;
  * label gutter, which would otherwise throw off every X conversion by that gutter's width. That
  * node doesn't exist until after the chart's first CSS/layout pass, so lookups are retried via
  * {@code Platform.runLater} until it appears.
+ *
+ * <p>A plain click freezes ("pauses") the crosshair at the clicked X - purely hover-driven
+ * tracking meant the display reverted the instant the mouse left the plot area, so there was no
+ * way to move the mouse onto the side panel itself (e.g. to reach a long entry's horizontal
+ * scrollbar) without losing the very values just hovered to read. Clicking again resumes live
+ * tracking.
  */
 public final class ChartCrosshair {
 
@@ -66,6 +71,11 @@ public final class ChartCrosshair {
     private double defaultYLower;
     private double defaultYUpper;
     private Region plotArea;
+    // Click anywhere on the plot area to freeze the crosshair at that X - lets the mouse then
+    // move anywhere at all (onto the side panel, its scrollbar, elsewhere entirely) without the
+    // display changing, so a long entry can actually be scrolled into view and read. Clicking
+    // again (anywhere on the plot area) resumes live tracking.
+    private boolean paused = false;
 
     public ChartCrosshair(Chart chart, PlotAnnotatable annotationTarget, NumberAxis xAxis,
                            Function<Double, String> xFormatter, Function<Double, List<Entry>> entriesAt) {
@@ -135,32 +145,23 @@ public final class ChartCrosshair {
     private void wireMouseHandlers(Region plotArea) {
         this.plotArea = plotArea;
         plotArea.setOnMouseMoved(e -> {
-            double dataX = xAxis.getValueForDisplay(e.getX()).doubleValue();
-            headerLabel.setText(xFormatter.apply(dataX));
-            renderEntries(entriesAt.apply(dataX));
-
-            crosshairLine.setStartX(e.getX());
-            crosshairLine.setEndX(e.getX());
-            crosshairLine.setStartY(0);
-            crosshairLine.setEndY(plotArea.getBoundsInLocal().getHeight());
-            crosshairLine.setVisible(true);
-        });
-        // The panel sits right next to the chart (not inside plotArea), so moving the mouse onto
-        // it - e.g. to reach entriesScroll's horizontal scrollbar and read a long entry that
-        // didn't fit - crosses out of plotArea's own bounds and would otherwise immediately fire
-        // this exited handler, wiping the very entries the user just moved over to read. Checking
-        // the exit point's screen position against the panel's own current bounds (rather than
-        // just always clearing) lets the mouse cross that boundary without losing the display;
-        // the panel's own mirrored handler below covers the reverse direction.
-        plotArea.setOnMouseExited(e -> {
-            if (isPointOverNode(panel, e.getScreenX(), e.getScreenY())) {
-                return;
+            if (!paused) {
+                updateCrosshair(e.getX());
             }
-            crosshairLine.setVisible(false);
-            showPlaceholder();
         });
-        panel.setOnMouseExited(e -> {
-            if (isPointOverNode(plotArea, e.getScreenX(), e.getScreenY())) {
+        // A plain click toggles paused - freezing (or releasing) the crosshair right where the
+        // cursor is, independent of any subsequent mouse movement. e.getClickCount() isn't
+        // filtered to exactly 1 here: Dashboard's chart-fullscreen double-click handler (a
+        // separate listener on the chart itself, above this node) still gets both click events of
+        // a double-click regardless, and a double-click's own pair of toggles here just cancels
+        // itself out (pause, then immediately un-pause) - harmless, and not worth the extra
+        // latency a click-count-disambiguating delay would add to the common single-click case.
+        plotArea.setOnMouseClicked(e -> {
+            paused = !paused;
+            updateCrosshair(e.getX());
+        });
+        plotArea.setOnMouseExited(e -> {
+            if (paused) {
                 return;
             }
             crosshairLine.setVisible(false);
@@ -168,9 +169,24 @@ public final class ChartCrosshair {
         });
     }
 
-    private static boolean isPointOverNode(Node node, double screenX, double screenY) {
-        Bounds bounds = node.localToScreen(node.getBoundsInLocal());
-        return bounds != null && bounds.contains(screenX, screenY);
+    private void updateCrosshair(double xPixel) {
+        double dataX = xAxis.getValueForDisplay(xPixel).doubleValue();
+        String suffix = paused ? " " + Messages.get("common.chart.pausedSuffix") : "";
+        headerLabel.setText(xFormatter.apply(dataX) + suffix);
+        renderEntries(entriesAt.apply(dataX));
+
+        crosshairLine.setStartX(xPixel);
+        crosshairLine.setEndX(xPixel);
+        crosshairLine.setStartY(0);
+        crosshairLine.setEndY(plotArea.getBoundsInLocal().getHeight());
+        crosshairLine.setVisible(true);
+        if (paused) {
+            if (!crosshairLine.getStyleClass().contains("crosshair-line-paused")) {
+                crosshairLine.getStyleClass().add("crosshair-line-paused");
+            }
+        } else {
+            crosshairLine.getStyleClass().remove("crosshair-line-paused");
+        }
     }
 
     private void showPlaceholder() {

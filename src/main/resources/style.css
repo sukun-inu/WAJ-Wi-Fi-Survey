@@ -248,6 +248,14 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 2, 0.4, 0, 0);
 }
 
+/* Added alongside .crosshair-line while the crosshair is click-pinned, so its frozen state is
+   visually distinct from the normal live-tracking line (accent color, thicker, dashed). */
+.crosshair-line-paused {
+    -fx-stroke: -fx-accent;
+    -fx-stroke-width: 2px;
+    -fx-stroke-dash-array: 5 3;
+}
+
 .crosshair-panel {
     -fx-padding: 6;
 }
