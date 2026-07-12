@@ -6,6 +6,7 @@ import com.opensitesurvey.tool.persistence.AppConfigStore;
 import com.opensitesurvey.tool.util.AppTheme;
 import com.opensitesurvey.tool.util.TooltipSupport;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -148,9 +149,23 @@ public final class SettingsDialog {
         });
         cancelButton.setOnAction(e -> stage.close());
 
-        VBox root = new VBox(12, form, trustedBox, buttonBar);
-        root.setPadding(new Insets(12));
-        Scene scene = new Scene(root, 520, 620);
+        // Same icon+title page-header band the main window uses on every screen (see App.java's
+        // wrapWithPageHeader) - reused here (not extracted into a shared helper, since this is the
+        // only secondary window that currently warrants it) so this modal reads as part of the same
+        // console rather than a visually disconnected popup.
+        Label headerIcon = new Label("⚙");
+        headerIcon.getStyleClass().add("page-header-icon");
+        headerIcon.setStyle("-fx-text-fill: #8a949e;");
+        Label headerTitle = new Label(Messages.get("settings.dialog.title"));
+        headerTitle.getStyleClass().add("page-header-title");
+        HBox header = new HBox(10, headerIcon, headerTitle);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.getStyleClass().add("page-header");
+
+        VBox content = new VBox(12, form, trustedBox, buttonBar);
+        content.setPadding(new Insets(12));
+        VBox root = new VBox(header, content);
+        Scene scene = new Scene(root, 520, 660);
         AppTheme.apply(scene);
         stage.setScene(scene);
         stage.showAndWait();

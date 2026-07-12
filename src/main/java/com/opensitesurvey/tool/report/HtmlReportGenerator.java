@@ -43,7 +43,9 @@ public final class HtmlReportGenerator {
                 .append("table{border-collapse:collapse;width:100%;margin-top:8px;}")
                 .append("th,td{border:1px solid #ccc;padding:5px 7px;font-size:11.5px;text-align:left;vertical-align:top;}")
                 .append("th{background:#f0f0f0;}")
-                .append(".risk-high{background:#e74c3c;color:white;} .risk-medium{background:#f1c40f;} .risk-low{background:#2ecc71;color:white;}")
+                // Colors audited for WCAG AA text contrast alongside RiskColors.java this session:
+                // white-on-#e74c3c and white-on-#2ecc71 both measured well under the 4.5:1 minimum.
+                .append(".risk-high{background:#c0392b;color:white;} .risk-medium{background:#f1c40f;} .risk-low{background:#2ecc71;color:#1e2228;}")
                 .append(".mono{font-family:'Consolas','Cascadia Mono','BIZ UDGothic','BIZ UDゴシック',monospace;white-space:nowrap;}")
                 .append("img.floorplan{max-width:100%;border:1px solid #999;margin-top:8px;}")
                 .append("@media print{body{margin:0;}h2,h3{break-after:avoid;}tr{break-inside:avoid;}table{page-break-inside:auto;}}")

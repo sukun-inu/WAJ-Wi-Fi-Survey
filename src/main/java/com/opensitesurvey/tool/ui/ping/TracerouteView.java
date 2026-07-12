@@ -113,6 +113,11 @@ public final class TracerouteView {
         return root;
     }
 
+    /** The live discovering/monitoring/stopped status, reused as this screen's page-header chip. */
+    public Label getStatusLabel() {
+        return statusLabel;
+    }
+
     /** Stops the background poller - call when the application is shutting down. */
     public void shutdown() {
         if (poller != null) {

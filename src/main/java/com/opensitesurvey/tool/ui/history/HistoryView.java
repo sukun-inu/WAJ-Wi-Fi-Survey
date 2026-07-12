@@ -196,6 +196,11 @@ public final class HistoryView {
         return root;
     }
 
+    /** The live search-result/row-count status, reused as this screen's page-header chip. */
+    public Label getStatusLabel() {
+        return statusLabel;
+    }
+
     /** Call once after the tab becomes visible or periodically to refresh the BSSID filter list. */
     public void refreshBssidList() {
         if (database == null) {

@@ -279,3 +279,200 @@
 .crosshair-scroll > .viewport {
     -fx-background-color: transparent;
 }
+
+/* ===================== NetOps console shell =====================
+ * Enterprise network-gear management console language (in the spirit of JunOS/Juniper Mist/HPE
+ * Aruba Central): an always-visible left nav rail with a clearly-highlighted current location, a
+ * slim brand/alarm summary bar, a per-screen page header ("where am I / what does this do"), and
+ * a persistent bottom chassis status line - the same four elements every screen in this app shares.
+ */
+
+.brand-bar {
+    -fx-background-color: #14171c;
+    -fx-padding: 5 14 5 14;
+    -fx-border-color: transparent transparent #3a4048 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.brand-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e4e8ec;
+}
+
+.brand-subtitle {
+    -fx-font-size: 10px;
+    -fx-text-fill: #7d8791;
+}
+
+/* Left navigation rail: fixed width, always visible, current screen always highlighted with an
+ * accent-colored left edge - an operator should never have to guess where they currently are. */
+.nav-rail {
+    -fx-background-color: #181b21;
+    -fx-padding: 6 0 6 0;
+    -fx-border-color: transparent #3a4048 transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+
+.nav-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-width: 0 0 0 3;
+    -fx-border-color: transparent;
+    -fx-text-fill: #c6cdd4;
+    -fx-font-size: 12px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 9 14 9 11;
+    -fx-graphic-text-gap: 10;
+    -fx-cursor: hand;
+}
+
+.nav-item:hover {
+    -fx-background-color: #20242c;
+    -fx-text-fill: #e4e8ec;
+}
+
+.nav-item:selected {
+    -fx-background-color: linear-gradient(to right, #2a3542 0%, #232a33 18%, #232a33 100%);
+    -fx-border-color: -fx-accent;
+    -fx-border-width: 0 0 0 4;
+    -fx-padding: 9 14 9 10;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+}
+
+.nav-item-icon {
+    -fx-font-size: 15px;
+}
+
+.nav-rail-section-label {
+    -fx-font-size: 10px;
+    -fx-text-fill: #6b7280;
+    -fx-padding: 10 0 4 14;
+}
+
+.nav-rail-separator {
+    -fx-border-color: transparent transparent #3a4048 transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 4 14 4 14;
+}
+
+/* Page header shown above every screen's own content - icon + title + one-line description, the
+ * same "where am I / what does this screen do" framing repeated on every screen. */
+.page-header {
+    -fx-background-color: #20242b;
+    -fx-padding: 6 16 6 16;
+    -fx-border-color: transparent transparent #3a4048 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.page-header-icon {
+    -fx-font-size: 18px;
+}
+
+.page-header-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e4e8ec;
+}
+
+.page-header-subtitle {
+    -fx-font-size: 11px;
+    -fx-text-fill: #8a949e;
+}
+
+/* Right-aligned live status chip in every page header (see wrapWithPageHeader) - mirrors a Label
+ * the screen already maintains (recommendation/summary/row-count/...), so it's always in sync. */
+.page-header-chip {
+    -fx-background-color: #2a2f38;
+    -fx-background-radius: 4;
+    -fx-padding: 5 12 5 12;
+    -fx-font-size: 11px;
+    -fx-text-fill: #c6cdd4;
+    -fx-max-width: 420;
+    -fx-text-overrun: ellipsis;
+}
+
+/* Bottom chassis status bar - persistent link/device status line, the same role a JunOS CLI
+ * status/prompt line plays: interface state should be visible at a glance at all times. */
+.status-footer {
+    -fx-background-color: #14171c;
+    -fx-padding: 5 12 5 12;
+    -fx-border-color: #3a4048 transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.status-footer .label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #a8b0b8;
+}
+
+.status-led {
+    -fx-min-width: 9;
+    -fx-min-height: 9;
+    -fx-max-width: 9;
+    -fx-max-height: 9;
+}
+
+.status-led-ok {
+    -fx-fill: #2ecc71;
+    -fx-effect: dropshadow(gaussian, #2ecc71, 4, 0.6, 0, 0);
+}
+
+.status-led-warning {
+    -fx-fill: #f1c40f;
+    -fx-effect: dropshadow(gaussian, #f1c40f, 4, 0.6, 0, 0);
+}
+
+.status-led-critical {
+    -fx-fill: #e74c3c;
+    -fx-effect: dropshadow(gaussian, #e74c3c, 4, 0.6, 0, 0);
+}
+
+.status-led-idle {
+    -fx-fill: #565f68;
+}
+
+/* Session alert-count summary badge in the brand bar - deliberately labeled/tooltipped as a
+ * cumulative session count (see app.alarm.tooltip), not a live "active alarm" state, since this
+ * app only observes fired point-in-time alert events, not standing device conditions. */
+.alarm-badge {
+    -fx-background-radius: 9;
+    -fx-padding: 1 8 1 8;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+/* Backgrounds/text below were audited for WCAG AA contrast (4.5:1) this session at their actual
+ * ~10px badge size - see RiskColors.java's own comment for the full before/after ratios; the same
+ * darkened red and lighter idle-gray are reused here for the one badge style RiskColors doesn't
+ * cover. */
+.alarm-badge-critical {
+    -fx-background-color: #c0392b;
+    -fx-text-fill: white;
+}
+
+.alarm-badge-warning {
+    -fx-background-color: #f1c40f;
+    -fx-text-fill: #1e2228;
+}
+
+.alarm-badge-idle {
+    -fx-background-color: #2a2f38;
+    -fx-text-fill: #c6cdd4;
+}
+
+/* Site Survey's "load a floor plan to get started" empty state (see SurveyView#buildEmptyStateOverlay).
+ * Text colors reuse #a8b0b8 (already used for the chassis footer's labels) - the first choice here
+ * (a darker #4a5560/#8a949e) measured only ~1.7:1/~4.1:1 against the canvas's #333333 placeholder
+ * fill, below the WCAG AA minimum; #a8b0b8 reaches ~5.8:1. */
+.survey-empty-state-icon {
+    -fx-font-size: 42px;
+    -fx-text-fill: #a8b0b8;
+}
+
+.survey-empty-state-message {
+    -fx-font-size: 13px;
+    -fx-text-fill: #a8b0b8;
+}

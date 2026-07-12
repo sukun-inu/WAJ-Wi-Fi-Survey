@@ -184,6 +184,11 @@ public final class ChannelPlanningView {
         return root;
     }
 
+    /** The live "推奨チャネル" recommendation, reused as this screen's page-header chip. */
+    public Label getRecommendationLabel() {
+        return recommendationLabel;
+    }
+
     /** Must be called on the JavaFX Application thread. */
     public void onSnapshot(ScanSnapshot snapshot) {
         this.lastSnapshot = snapshot;

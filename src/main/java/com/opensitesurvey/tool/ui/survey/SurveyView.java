@@ -75,6 +75,10 @@ public final class SurveyView {
     private final BorderPane root = new BorderPane();
     private final Canvas canvas = new Canvas(900, 600);
     private final StackPane canvasHolder = new StackPane(canvas);
+    // Shown centered over the canvas only while no floor plan is loaded (see redraw() and
+    // buildEmptyStateOverlay()) - otherwise a first-time user sees only a plain dark rectangle
+    // with a one-line hint down in the status bar, easy to miss entirely.
+    private final VBox emptyStateOverlay = new VBox(10);
     private final ComboBox<String> targetSelector = new ComboBox<>();
     private static final String ALGO_IDW = "IDW";
     private static final String ALGO_KRIGING = "Kriging";
@@ -192,6 +196,7 @@ public final class SurveyView {
         pingHostField.setText(defaultPingHost == null ? "" : defaultPingHost);
         buildToolbar();
         buildCanvas();
+        buildEmptyStateOverlay();
         // Wrapped in a holder (not the canvas directly) so the floor plan scales up/down with the
         // window instead of staying pinned at whatever size it happened to load at - Canvas isn't
         // resizable by JavaFX's own layout system, so this has to be driven explicitly.
@@ -204,6 +209,11 @@ public final class SurveyView {
 
     public javafx.scene.Node getRoot() {
         return root;
+    }
+
+    /** The live recorded-point-count status, reused as this screen's page-header chip. */
+    public Label getStatusLabel() {
+        return statusLabel;
     }
 
     private void buildToolbar() {
@@ -426,6 +436,21 @@ public final class SurveyView {
             double yNorm = e.getY() / canvas.getHeight();
             recordPoint(xNorm, yNorm);
         });
+    }
+
+    /** Centered "load a floor plan to get started" placeholder - see {@link #emptyStateOverlay}. */
+    private void buildEmptyStateOverlay() {
+        Label icon = new Label("⛶");
+        icon.getStyleClass().add("survey-empty-state-icon");
+        Label message = new Label(Messages.get("survey.status.loadFloorPlanPrompt"));
+        message.getStyleClass().add("survey-empty-state-message");
+        Button loadButton = new Button(Messages.get("survey.button.openFloorPlan"));
+        loadButton.setDefaultButton(true);
+        loadButton.setOnAction(e -> onLoadFloorPlan());
+        emptyStateOverlay.getChildren().setAll(icon, message, loadButton);
+        emptyStateOverlay.setAlignment(Pos.CENTER);
+        emptyStateOverlay.getStyleClass().add("survey-empty-state");
+        canvasHolder.getChildren().add(emptyStateOverlay);
     }
 
     /**
@@ -1041,6 +1066,8 @@ public final class SurveyView {
     }
 
     private void redraw() {
+        emptyStateOverlay.setVisible(floorPlanImage == null);
+        emptyStateOverlay.setManaged(floorPlanImage == null);
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
         if (floorPlanImage != null) {

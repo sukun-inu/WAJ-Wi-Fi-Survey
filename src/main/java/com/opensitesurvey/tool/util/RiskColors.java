@@ -26,10 +26,17 @@ public final class RiskColors {
         }
     }
 
-    private static final Style HIGH = new Style(Color.web("#e74c3c"), Color.WHITE);
+    // Text colors were audited against the WCAG 2.1 AA contrast minimum (4.5:1 for this table/badge
+    // text's actual size) this session: white-on-#e74c3c measured only ~3.8:1 (fails), as did
+    // white-on-#2ecc71 (~2.1:1, badly) and white-on-#3498db (~3.2:1) - HIGH's background is darkened
+    // to a slightly deeper red (still the same "Flat UI" palette family as the rest of this app's
+    // colors) to reach ~5.4:1 with white text; LOW/INFO keep their original background hue but swap
+    // to the app's own dark text color (matching MEDIUM's already-passing black-on-yellow pattern),
+    // reaching ~7.6:1 and ~5.1:1 respectively.
+    private static final Style HIGH = new Style(Color.web("#c0392b"), Color.WHITE);
     private static final Style MEDIUM = new Style(Color.web("#f1c40f"), Color.BLACK);
-    private static final Style LOW = new Style(Color.web("#2ecc71"), Color.WHITE);
-    private static final Style INFO = new Style(Color.web("#3498db"), Color.WHITE);
+    private static final Style LOW = new Style(Color.web("#2ecc71"), Color.web("#1e2228"));
+    private static final Style INFO = new Style(Color.web("#3498db"), Color.web("#1e2228"));
 
     private RiskColors() {
     }

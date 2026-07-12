@@ -4,6 +4,7 @@ import com.opensitesurvey.tool.i18n.Messages;
 import com.opensitesurvey.tool.util.MonoTableCells;
 import com.opensitesurvey.tool.util.RiskColors;
 import com.opensitesurvey.tool.util.TooltipSupport;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -25,6 +26,7 @@ public final class AlertsView {
     private final BorderPane root = new BorderPane();
     private final TableView<Alert> table = new TableView<>();
     private final ObservableList<Alert> items = FXCollections.observableArrayList();
+    private final Label countLabel = new Label();
 
     public AlertsView(Runnable onSettingsRequested) {
         buildTable();
@@ -33,7 +35,8 @@ public final class AlertsView {
         settingsButton.setOnAction(e -> onSettingsRequested.run());
         TooltipSupport.set(settingsButton, Messages.get("tooltip.alerts.settings"));
         TooltipSupport.set(table, Messages.get("tooltip.alerts.table"));
-        HBox top = new HBox(8, new Label(Messages.get("alerts.label.title")), settingsButton);
+        countLabel.textProperty().bind(Bindings.size(items).asString(Messages.get("alerts.status.count")));
+        HBox top = new HBox(8, new Label(Messages.get("alerts.label.title")), settingsButton, countLabel);
         top.setAlignment(Pos.CENTER_LEFT);
         top.setPadding(new Insets(8));
 
@@ -43,6 +46,11 @@ public final class AlertsView {
 
     public javafx.scene.Node getRoot() {
         return root;
+    }
+
+    /** The live fired-alert count, reused as this screen's page-header chip. */
+    public Label getCountLabel() {
+        return countLabel;
     }
 
     /** Must be called on the JavaFX Application thread. */

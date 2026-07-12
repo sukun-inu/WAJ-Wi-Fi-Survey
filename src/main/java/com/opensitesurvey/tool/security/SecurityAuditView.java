@@ -57,6 +57,11 @@ public final class SecurityAuditView {
         return root;
     }
 
+    /** The live "検出AP数/オープン/WEP/高リスク合計" summary, reused as this screen's page-header chip. */
+    public Label getSummaryLabel() {
+        return summaryLabel;
+    }
+
     private void buildTable() {
         // Same identity color as the Dashboard's curves/table swatch for this BSSID, so an
         // engineer can visually cross-reference "this risky AP" with its Dashboard trace.
