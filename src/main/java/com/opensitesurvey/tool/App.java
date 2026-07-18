@@ -47,7 +47,6 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -197,7 +196,7 @@ public class App extends Application {
         contentStack.setMinWidth(0);
         List<ToggleButton> navButtons = new ArrayList<>();
         for (NavEntry entry : navEntries) {
-            ToggleButton button = buildNavButton(entry.icon(), entry.iconColor(), entry.titleKey(), entry.tooltipKey(), navGroup);
+            ToggleButton button = buildNavButton(entry.icon(), entry.titleKey(), entry.tooltipKey(), navGroup);
             VBox page = wrapWithPageHeader(entry.icon(), entry.iconColor(), entry.titleKey(), entry.tooltipKey(), entry.content(), entry.chip());
             button.setUserData(page);
             navButtons.add(button);
@@ -231,7 +230,6 @@ public class App extends Application {
 
         Label settingsNavIcon = new Label("⚙");
         settingsNavIcon.getStyleClass().add("nav-item-icon");
-        settingsNavIcon.setStyle("-fx-text-fill: #8a949e;");
         Button settingsNavButton = new Button(Messages.get("app.nav.settings"));
         settingsNavButton.setGraphic(settingsNavIcon);
         settingsNavButton.getStyleClass().add("nav-item");
@@ -245,26 +243,16 @@ public class App extends Application {
         navSeparator.getStyleClass().add("nav-rail-separator");
         navRail.getChildren().addAll(navSpacer, navSeparator, settingsNavButton);
 
-        ImageView brandIcon = new ImageView(new Image(getClass().getResourceAsStream("/icons/app-32.png")));
-        brandIcon.setFitWidth(22);
-        brandIcon.setFitHeight(22);
-        Label brandTitle = new Label(Messages.get("app.title"));
-        brandTitle.getStyleClass().add("brand-title");
-        Label brandSubtitle = new Label(Messages.get("app.brand.subtitle"));
-        brandSubtitle.getStyleClass().add("brand-subtitle");
-        VBox brandTextBox = new VBox(0, brandTitle, brandSubtitle);
-        Region brandSpacer = new Region();
-        HBox.setHgrow(brandSpacer, Priority.ALWAYS);
         // Cumulative session alert-count badge (not a live "active alarm" state - this app only
         // observes point-in-time fired alert events, not standing device conditions, so the badge
         // is deliberately worded/tooltipped as a session tally rather than implying otherwise).
-        Label alarmBadge = new Label("0");
+        // Lives in the chassis footer alongside the other status indicators (link LED, REST API,
+        // plugin count) - not in its own separate brand row, which the app's own OS-level title
+        // bar/icon already made redundant.
+        Label alarmBadge = new Label(Messages.get("app.footer.alerts", 0));
         alarmBadge.getStyleClass().addAll("alarm-badge", "alarm-badge-idle");
         TooltipSupport.set(alarmBadge, Messages.get("app.alarm.tooltip"));
         alarmBadge.setOnMouseClicked(e -> navButtons.get(4).setSelected(true));
-        HBox brandBar = new HBox(10, brandIcon, brandTextBox, brandSpacer, alarmBadge);
-        brandBar.setAlignment(Pos.CENTER_LEFT);
-        brandBar.getStyleClass().add("brand-bar");
 
         Label accessDeniedBanner = new Label();
         // #c0392b (not the RiskColors-family #e74c3c used elsewhere) - white text on plain
@@ -331,7 +319,7 @@ public class App extends Application {
                 new Separator(Orientation.VERTICAL),
                 new Label(Messages.get("app.label.interfaceCaption")), interfaceSelector, refreshInterfacesButton,
                 spacer,
-                restApiChip, new Separator(Orientation.VERTICAL), pluginChip);
+                alarmBadge, new Separator(Orientation.VERTICAL), restApiChip, new Separator(Orientation.VERTICAL), pluginChip);
         statusBar.setAlignment(Pos.CENTER_LEFT);
         statusBar.setPadding(new Insets(4, 10, 4, 10));
         statusBar.getStyleClass().add("status-footer");
@@ -350,7 +338,7 @@ public class App extends Application {
         MenuBar menuBar = buildMenuBar(primaryStage, appConfig, alertContext.trustedApRegistry);
 
         BorderPane root = new BorderPane();
-        VBox top = new VBox(menuBar, brandBar, accessDeniedBanner);
+        VBox top = new VBox(menuBar, accessDeniedBanner);
         root.setTop(top);
         root.setLeft(navRail);
         root.setCenter(contentStack);
@@ -522,10 +510,9 @@ public class App extends Application {
     }
 
     /** One left-nav-rail entry: an icon-labeled toggle button, styled/tooltipped consistently. */
-    private static ToggleButton buildNavButton(String icon, String iconColor, String titleKey, String tooltipKey, ToggleGroup group) {
+    private static ToggleButton buildNavButton(String icon, String titleKey, String tooltipKey, ToggleGroup group) {
         Label iconLabel = new Label(icon);
         iconLabel.getStyleClass().add("nav-item-icon");
-        iconLabel.setStyle("-fx-text-fill: " + iconColor + ";");
         ToggleButton button = new ToggleButton(Messages.get(titleKey));
         button.setGraphic(iconLabel);
         button.getStyleClass().add("nav-item");
@@ -575,10 +562,15 @@ public class App extends Application {
         led.getStyleClass().add(severityStyleClass);
     }
 
-    /** Recolors/relabels the brand bar's cumulative session alert-count badge. */
+    /**
+     * Recolors/relabels the chassis footer's cumulative session alert-count chip. Styled as plain
+     * colored text (see .alarm-badge* in style.css), the same "text color carries the state"
+     * convention as its neighboring REST API chip - not a filled pill, which would be the only
+     * such shape in an otherwise plain-text footer.
+     */
     private static void updateAlarmBadge(Label badge, int criticalCount, int warningCount) {
         badge.getStyleClass().removeAll("alarm-badge-critical", "alarm-badge-warning", "alarm-badge-idle");
-        badge.setText(String.valueOf(criticalCount + warningCount));
+        badge.setText(Messages.get("app.footer.alerts", criticalCount + warningCount));
         if (criticalCount > 0) {
             badge.getStyleClass().add("alarm-badge-critical");
         } else if (warningCount > 0) {

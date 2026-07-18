@@ -283,27 +283,12 @@
 /* ===================== NetOps console shell =====================
  * Enterprise network-gear management console language (in the spirit of JunOS/Juniper Mist/HPE
  * Aruba Central): an always-visible left nav rail with a clearly-highlighted current location, a
- * slim brand/alarm summary bar, a per-screen page header ("where am I / what does this do"), and
- * a persistent bottom chassis status line - the same four elements every screen in this app shares.
+ * per-screen page header ("where am I / what does this do"), and a persistent bottom chassis
+ * status line - the same three elements every screen in this app shares. (An earlier version also
+ * had a slim standalone brand bar above the nav rail/page header - removed per user feedback as
+ * redundant with the OS window title bar's own icon/name; its alarm-count badge moved down into
+ * the chassis status bar instead.)
  */
-
-.brand-bar {
-    -fx-background-color: #14171c;
-    -fx-padding: 5 14 5 14;
-    -fx-border-color: transparent transparent #3a4048 transparent;
-    -fx-border-width: 0 0 1 0;
-}
-
-.brand-title {
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #e4e8ec;
-}
-
-.brand-subtitle {
-    -fx-font-size: 10px;
-    -fx-text-fill: #7d8791;
-}
 
 /* Left navigation rail: fixed width, always visible, current screen always highlighted with an
  * accent-colored left edge - an operator should never have to guess where they currently are. */
@@ -333,7 +318,10 @@
 }
 
 .nav-item:selected {
-    -fx-background-color: linear-gradient(to right, #2a3542 0%, #232a33 18%, #232a33 100%);
+    /* Flat, not a gradient - every other surface in this app (cards, chips, panes) is flat, so a
+     * gradient here read as an unexplained one-off. #262b33 is the app's own -fx-base token (see
+     * .root), reused rather than inventing a new shade. */
+    -fx-background-color: #262b33;
     -fx-border-color: -fx-accent;
     -fx-border-width: 0 0 0 4;
     -fx-padding: 9 14 9 10;
@@ -341,8 +329,20 @@
     -fx-font-weight: bold;
 }
 
+/* Icons are neutral/muted by default and only pick up full white once their nav item is the
+ * current screen - the state (selected vs. not) is what should draw the eye, not a permanent
+ * per-item rainbow of colors sitting side by side in one glance down the rail. */
 .nav-item-icon {
     -fx-font-size: 15px;
+    -fx-text-fill: #7d8791;
+}
+
+.nav-item:selected .nav-item-icon {
+    -fx-text-fill: #ffffff;
+}
+
+.nav-item:hover .nav-item-icon {
+    -fx-text-fill: #e4e8ec;
 }
 
 .nav-rail-section-label {
@@ -433,34 +433,28 @@
     -fx-fill: #565f68;
 }
 
-/* Session alert-count summary badge in the brand bar - deliberately labeled/tooltipped as a
+/* Session alert-count chip in the chassis footer - deliberately labeled/tooltipped as a
  * cumulative session count (see app.alarm.tooltip), not a live "active alarm" state, since this
- * app only observes fired point-in-time alert events, not standing device conditions. */
+ * app only observes fired point-in-time alert events, not standing device conditions. Plain text,
+ * matching its neighboring REST API/plugin-count chips - no background pill, so this doesn't read
+ * as a different kind of UI element sitting in an otherwise plain-text status line. */
 .alarm-badge {
-    -fx-background-radius: 9;
-    -fx-padding: 1 8 1 8;
-    -fx-font-size: 10px;
-    -fx-font-weight: bold;
+    -fx-font-size: 11px;
     -fx-cursor: hand;
 }
 
-/* Backgrounds/text below were audited for WCAG AA contrast (4.5:1) this session at their actual
- * ~10px badge size - see RiskColors.java's own comment for the full before/after ratios; the same
- * darkened red and lighter idle-gray are reused here for the one badge style RiskColors doesn't
- * cover. */
 .alarm-badge-critical {
-    -fx-background-color: #c0392b;
-    -fx-text-fill: white;
+    -fx-text-fill: #e74c3c;
+    -fx-font-weight: bold;
 }
 
 .alarm-badge-warning {
-    -fx-background-color: #f1c40f;
-    -fx-text-fill: #1e2228;
+    -fx-text-fill: #f1c40f;
+    -fx-font-weight: bold;
 }
 
 .alarm-badge-idle {
-    -fx-background-color: #2a2f38;
-    -fx-text-fill: #c6cdd4;
+    -fx-text-fill: #a8b0b8;
 }
 
 /* Site Survey's "load a floor plan to get started" empty state (see SurveyView#buildEmptyStateOverlay).
