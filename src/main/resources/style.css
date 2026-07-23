@@ -43,6 +43,12 @@
 
 .menu-bar {
     -fx-background-color: #20242b;
+    /* Without this, the menu bar and the page header directly below it share the exact same
+       background (#20242b) with nothing between them, so the two merge into one indistinct block -
+       reusing the same #3a4048 divider already used by .page-header/.nav-rail/.status-footer gives
+       the menu bar a clear, consistent bottom edge like every other section in this app. */
+    -fx-border-color: transparent transparent #3a4048 transparent;
+    -fx-border-width: 0 0 1 0;
 }
 
 .chart-title {
